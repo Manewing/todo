@@ -205,9 +205,14 @@ error_free:
   int execute_delete_item_cmd(todo_gui * gui,
       todo_list * list, int input __attribute__((unused)) ) {
     assert(gui && list);
-    list->remove_item(list->get_selection());
-    gui->update();
-    gui->print_msg("Removed item...");
+    todo_item * item = list->get_selection();
+    if(item) {
+      list->remove_item(list->get_selection());
+      gui->update();
+      gui->print_msg("Removed item...");
+    } else {
+      gui->print_msg("No item selected...");
+    }
     g_executed.push_back(&delete_item_cmd);
     return 0;
   }

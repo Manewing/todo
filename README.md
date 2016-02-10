@@ -1,2 +1,2 @@
 # todo
-NCURSES based command line GUI todo list
+NCURSES based todo list

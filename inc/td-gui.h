@@ -41,10 +41,13 @@ namespace td_utils {
       std::string get_cmdline();
       void set_focus(int focus) { m_focus = focus; }
       int get_focus() const { return m_focus; }
+      void quit();
+      bool is_running();
     public:
       int m_row;
       int m_col;
     private:
+      bool         m_quit;
       int          m_scroll;
       int          m_focus;
       todo_list   &m_list;

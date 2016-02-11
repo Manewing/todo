@@ -14,9 +14,8 @@ int main(int argc, char * argv[]) {
   gui.update();
 
   int input;
-  int exit = false;
 
-  while(exit != true) {
+  while(gui.is_running()) {
     input = getch();
     switch(gui.get_focus()) {
       case td_utils::todo_gui::NO_FOCUS:
@@ -29,7 +28,7 @@ int main(int argc, char * argv[]) {
             gui.start_cmdline();
             break;
           case td_utils::todo_gui::CMDK_EXIT:  // '0'
-            exit = true;
+            gui.quit();
             break;
           case td_utils::todo_gui::CMDK_DELETE: //'d'
             td_utils::command_start(&td_utils::delete_item_cmd);

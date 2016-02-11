@@ -4,7 +4,7 @@
 namespace td_utils {
 
   todo_gui::todo_gui(todo_list &list)
-          : m_scroll(0), m_focus(NO_FOCUS),
+          : m_quit(false), m_scroll(0), m_focus(NO_FOCUS),
             m_list(list), m_msg_u(),
             m_cmdline(":"), m_cmdline_pos(1),
             m_cmdline_history(), m_cmdline_histptr(m_cmdline_history.end()) {
@@ -172,6 +172,14 @@ namespace td_utils {
 
   std::string todo_gui::get_cmdline() {
     return m_cmdline.substr(1, m_cmdline.length());
+  }
+
+  void todo_gui::quit() {
+    m_quit = true;
+  }
+
+  bool todo_gui::is_running() {
+    return !m_quit;
   }
 
 }; // namespace td_utils

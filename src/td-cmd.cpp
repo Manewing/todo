@@ -6,27 +6,22 @@
 
 namespace td_utils {
 
-#define CMDLINE_FUNC(func) int cmdline_ ## func (void * params[])
+  std::list<undo_function> g_executed;
 
   CMDLINE_FUNC(help);
   CMDLINE_FUNC(s);
+  CMDLINE_FUNC(w);
   CMDLINE_FUNC(sortby);
   CMDLINE_FUNC(add);
-
-#define CMDLINE_CMD(func, params, help) {#func, &cmdline_ ## func, params, help}
-
-  typedef struct {
-    const char * cmdline_cmd;                //< the actual command
-    int (*cmdline_execute)(void * params[]); //< function to execute
-    const char * cmdline_args;               //< defines argument list of cmd
-    const char * cmdline_doc;                //< documentation of command
-  } todo_cmdline;
+  CMDLINE_FUNC(q);
 
   todo_cmdline cmdline_cmds[] = {
     CMDLINE_CMD(help, "g", "Displays this screen, help <cmd> for detailed information"),
-    CMDLINE_CMD(s, "sgl", "Saves todo list, to file"),
+    CMDLINE_CMD(s, "sgl", "Saves todo list to file"),
+    CMDLINE_CMD(w, "sgl", "Save todo list to file"), //TODO make alias
     CMDLINE_CMD(sortby, "sl", "Select sort mode for todo list"),
-    CMDLINE_CMD(add, "sl", "Adds item to todo list")
+    CMDLINE_CMD(add, "sl", "Adds item to todo list"),
+    CMDLINE_CMD(q, "g", "Quit")
   };
 
   const unsigned int cmdline_cmds_count = sizeof(cmdline_cmds) / sizeof(cmdline_cmds[0]);
@@ -187,6 +182,10 @@ error_free:
     return 0;
   }
 
+  int cmdline_w(void * params[]) {
+    return cmdline_s(params);
+  }
+
   int cmdline_add(void * params[]) {
     if(!params)
       return -1;
@@ -199,132 +198,12 @@ error_free:
     return 0;
   }
 
-  std::list<todo_cmd*> g_commands;
-  std::list<todo_cmd*> g_executed;
-
-  int execute_delete_item_cmd(todo_gui * gui,
-      todo_list * list, int input __attribute__((unused)) ) {
-    assert(gui && list);
-    todo_item * item = list->get_selection();
-    if(item) {
-      list->remove_item(list->get_selection());
-      gui->update();
-      gui->print_msg("Removed item...");
-    } else {
-      gui->print_msg("No item selected...");
-    }
-    g_executed.push_back(&delete_item_cmd);
-    return 0;
-  }
-
-  int execute_undo_cmd(todo_gui * gui,
-      todo_list * list, int input __attribute__((unused)) ) {
-    assert(gui && list);
-    if(g_executed.empty()) {
-      gui->print_msg("Can not undo more...");
-      return 1;
-    }
-    todo_cmd * last = g_executed.back();
-    if(last == &delete_item_cmd) {
-      list->undo_remove();
-      gui->update();
-      gui->print_msg("Restored item...");
-    } else {
-      gui->print_msg("ERROR: Cannot undo last command!");
+  int cmdline_q(void * params[]) {
+    if(!params || !params[0])
       return -1;
-    }
-    //remove last executed command from the list
-    g_executed.pop_back();
+    todo_gui * gui = static_cast<todo_gui*>(params[0]);
+    gui->quit();
     return 0;
-  }
-
-  int execute_set_item_cmd(todo_gui * gui, todo_list * list, int input) {
-    assert(gui && list);
-    todo_item * item = list->get_selection();
-    switch(input) {
-      case 0x64: //'d'
-        item->set_state(todo_item::DONE);
-        gui->print_msg_u("Set item to DONE");
-        break;
-      case 0x74: //'t'
-        item->set_state(todo_item::TODO);
-        gui->print_msg_u("Set item to TODO");
-        break;
-      case 0x77: //'w'
-        item->set_state(todo_item::WORK_IN_PRG);
-        gui->print_msg_u("Set item to WORK IN PROGRESS");
-        break;
-      default:
-        gui->print_msg_u("Invalid command...");
-        return -1;
-    }
-    list->sort();
-    gui->update();
-    return 0;
-  }
-
-#define FORWARD_CHAR 0xFF
-
-  todo_cmd delete_item_cmd = { (unsigned int[]){ 0x64, 0x64 }, 2, 0, &execute_delete_item_cmd };
-  todo_cmd undo_cmd = { (unsigned int[]){ 0x75, 0x75 }, 2, 0, &execute_undo_cmd };
-  todo_cmd set_item_cmd = { (unsigned int[]){0x73, FORWARD_CHAR}, 2, 0, &execute_set_item_cmd };
-
-  void command_check_list(int input, todo_gui * gui, todo_list * list) {
-    std::list<todo_cmd*>::iterator it;
-    std::list<todo_cmd*> rm_cmds;
-    for(it = g_commands.begin(); it != g_commands.end(); it++) {
-      int rc = command_check(*it, input, gui, list);
-      switch(rc) {
-        case -1:
-          // new keyboard input did not fit, remove command from list
-          rm_cmds.push_back(*it);
-          break;
-        case 0:
-          // command was executed, cmd list is cleared
-          return;
-          break;
-        case 1:
-          // new keyboard input did fit, but command wasnt executed, do nothing
-          break;
-        default:
-          // should never happen
-          assert(0);
-          break;
-      }
-    }
-    for(it = rm_cmds.begin(); it != rm_cmds.end(); it++) {
-      (*it)->cmd_index = 0; //reset command
-      g_commands.remove(*it);
-    }
-  }
-
-  void command_start(todo_cmd * cmd) {
-    assert(cmd);
-    g_commands.push_back(cmd);
-  }
-
-  int command_check(todo_cmd * cmd, int input, todo_gui * gui, todo_list * list) {
-    assert(cmd);
-    if((unsigned)input == cmd->cmd_list[cmd->cmd_index])
-      cmd->cmd_index++;
-    else if(cmd->cmd_list[cmd->cmd_index] == FORWARD_CHAR)
-      cmd->cmd_index++;
-    else
-      return -1;
-    if(cmd->cmd_index == cmd->cmd_size) {
-      cmd->execute(gui, list, input);
-      command_reset();
-      return 0;
-    }
-    return 1;
-  }
-
-  void command_reset() {
-    std::list<todo_cmd*>::iterator it;
-    for(it = g_commands.begin(); it != g_commands.end(); it++) {
-      (*it)->cmd_index = 0; //reset command by setting index to 0
-    }
-    g_commands.clear();
   }
 
 }; // namespace td_utils

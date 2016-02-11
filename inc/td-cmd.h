@@ -6,51 +6,24 @@
 
 namespace td_utils {
 
+#define UNDO_FUNCTION(name) int undo_function_ ## name (todo_gui * gui, todo_list * list)
+
+  typedef int (*undo_function)(todo_gui * gui, todo_list * list);
+  extern std::list<undo_function> g_executed;
+
+#define CMDLINE_FUNC(func) int cmdline_ ## func (void * params[])
+#define CMDLINE_CMD(func, params, help) {#func, &cmdline_ ## func, params, help}
+
+  //TODO add aliases for commands
+  typedef struct {
+    const char * cmdline_cmd;                //< the actual command
+    int (*cmdline_execute)(void * params[]); //< function to execute
+    const char * cmdline_args;               //< defines argument list of cmd
+    const char * cmdline_doc;                //< documentation of command
+  } todo_cmdline;
+
   void execute_cmdline(const std::string & cmdline, todo_gui * gui,
       todo_list * list);
-
-  typedef struct {
-    unsigned int * cmd_list;
-    unsigned int cmd_size;
-    unsigned int cmd_index;
-    int (*execute)(todo_gui * gui, todo_list * list, int input);
-  } todo_cmd;
-
-  ///< delete item command = "dd"
-  extern todo_cmd delete_item_cmd;
-  ///< undo last command = "uu"
-  extern todo_cmd undo_cmd;
-  ///< set item state = "s{d,t,w}"
-  extern todo_cmd set_item_cmd;
-
-  /**
-   * @brief checks if new input equals command input in list
-   * @param[in]     input - new keyboard input
-   * @param[in/out] gui   - pointer to todo gui
-   * @param[in/out] list  - pointer to todo list
-   */
-  void command_check_list(int input, todo_gui * gui, todo_list * list);
-
-  /**
-   * @brief start command by adding it to list
-   * @param[in/out] cmd - pointer to the command to be started
-   */
-  void command_start(todo_cmd * cmd);
-
-  /**
-   * @brief checks if new input equals command input
-   * @param[in/out] cmd   - command to check
-   * @param[in]     input - new keyboard input
-   * @param[in/out] gui   - pointer to todo gui
-   * @param[in/out] list  - pointer to todo list
-   * @return NULL if commands is executed
-   */
-  int command_check(todo_cmd * cmd, int input, todo_gui * gui, todo_list * list);
-
-  /**
-   * @brief resets command list after command execution
-   */
-  void command_reset();
 
 }; // namespace td_utils
 

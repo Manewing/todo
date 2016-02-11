@@ -5,6 +5,7 @@
 #include "td-gui.h"
 #include "td-list.h"
 #include "td-cmd.h"
+#include "td-shortcuts.h"
 
 
 int main(int argc, char * argv[]) {
@@ -27,21 +28,12 @@ int main(int argc, char * argv[]) {
             gui.set_focus(td_utils::todo_gui::CMD_LINE_FOCUS);
             gui.start_cmdline();
             break;
-          case td_utils::todo_gui::CMDK_EXIT:  // '0'
+          case td_utils::todo_gui::CMDK_EXIT:  // 'q'
             gui.quit();
-            break;
-          case td_utils::todo_gui::CMDK_DELETE: //'d'
-            td_utils::command_start(&td_utils::delete_item_cmd);
             break;
           case td_utils::todo_gui::CMDK_EDIT: // 'e'
             gui.expand_item();
             gui.set_focus(td_utils::todo_gui::ITEM_FOCUS);
-            break;
-          case td_utils::todo_gui::CMDK_UNDO: // 'u'
-            td_utils::command_start(&td_utils::undo_cmd);
-            break;
-          case 0x73:
-            td_utils::command_start(&td_utils::set_item_cmd);
             break;
           case td_utils::todo_gui::CMDK_ARROW_DOWN:
             gui.scroll_down();
@@ -50,6 +42,7 @@ int main(int argc, char * argv[]) {
             gui.scroll_up();
             break;
           default:
+            shortcut_update(input, &gui, &list);
             break;
         }
         break;
@@ -107,6 +100,5 @@ int main(int argc, char * argv[]) {
         gui.set_focus(td_utils::todo_gui::NO_FOCUS);
         break;
     }
-    td_utils::command_check_list(input, &gui, &list);
   }
 }

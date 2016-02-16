@@ -6,14 +6,19 @@
 
 namespace td_utils {
 
+//< macro to define a undo function
 #define UNDO_FUNCTION(name) int undo_function_ ## name (todo_gui * gui, todo_list * list)
 
+  //< typedef of undo function
   typedef int (*undo_function)(todo_gui * gui, todo_list * list);
+
+  //< list of undo function from exectued commands
   extern std::list<undo_function> g_executed;
 
-#define CMDLINE_FUNC(func) int cmdline_ ## func (void * params[])
-#define CMDLINE_CMD(func, params, help) {#func, &cmdline_ ## func, params, help}
 
+  /**
+   * @brief todo command line
+   */
   //TODO add aliases for commands
   typedef struct {
     const char * cmdline_cmd;                //< the actual command
@@ -22,6 +27,12 @@ namespace td_utils {
     const char * cmdline_doc;                //< documentation of command
   } todo_cmdline;
 
+  /**
+   * @brief executes command line string
+   * @param[in]     cmdline - command line string to execute
+   * @param[in/out] gui     - pointer to the todo gui
+   * @param[in/out] list    - pointer to the todo list
+   */
   void execute_cmdline(const std::string & cmdline, todo_gui * gui,
       todo_list * list);
 

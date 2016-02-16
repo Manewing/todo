@@ -6,6 +6,13 @@
 
 namespace td_utils {
 
+//< if to forward input to shortcut function and trigger function
+#define FORWARD_INPUT 0xFF
+
+//< macors to define shortcut and shortcut function
+#define SHORTCUT_FUNC(name) int exec_shortcut_ ## name (todo_gui * gui, todo_list * list, int input)
+#define SHORTCUT(name, list, size) {(int[])list, size, 0, &exec_shortcut_ ## name }
+
   SHORTCUT_FUNC(undo);
   SHORTCUT_FUNC(del);
   UNDO_FUNCTION(del);
@@ -13,7 +20,7 @@ namespace td_utils {
 
 #define P99_PROTECT(...) __VA_ARGS__
   todo_shc shortcuts[] = {
-    //< undo last command = "uu"
+    //< undo last command = "u"
     SHORTCUT(undo, P99_PROTECT({ 0x75 }), 1),
     //< delete selected item command = "dd"
     SHORTCUT(del, P99_PROTECT({ 0x64, 0x64 }), 2),
@@ -21,9 +28,16 @@ namespace td_utils {
     SHORTCUT(set_item, P99_PROTECT({ 0x73, FORWARD_INPUT }), 2)
   };
 
+  //< count of shortcuts
   const unsigned int shortcut_count = sizeof(shortcuts) / sizeof(shortcuts[0]);
 
-  int shortcut_update(int input, todo_gui * gui, todo_list * list) {
+  /**
+   * @brief updates shortcuts if user input occurred
+   * @param[in]     input - new user input
+   * @param[in/out] gui   - pointer to todo gui
+   * @param[in/out] list  - pointer to todo list
+   */
+  void shortcut_update(int input, todo_gui * gui, todo_list * list) {
     assert(gui && list);
     for(unsigned int l = 0; l < shortcut_count; l++) {
       if(shortcuts[l].shc_list[shortcuts[l].shc_index] == input ||
@@ -40,7 +54,6 @@ namespace td_utils {
         shortcuts[l].shc_index = 0;
       }
     }
-    return 0;
   }
 
   int exec_shortcut_del(todo_gui * gui,

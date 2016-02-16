@@ -1,4 +1,5 @@
 #include <td-cmd.h>
+
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -6,8 +7,14 @@
 
 namespace td_utils {
 
+  //< list of undo function from exectued commands
   std::list<undo_function> g_executed;
 
+//< macros to define command line function and command
+#define CMDLINE_FUNC(func) int cmdline_ ## func (void * params[])
+#define CMDLINE_CMD(func, params, help) {#func, &cmdline_ ## func, params, help}
+
+  //< all functions for command line commands
   CMDLINE_FUNC(help);
   CMDLINE_FUNC(s);
   CMDLINE_FUNC(w);
@@ -15,6 +22,7 @@ namespace td_utils {
   CMDLINE_FUNC(add);
   CMDLINE_FUNC(q);
 
+  //< all command line commands
   todo_cmdline cmdline_cmds[] = {
     CMDLINE_CMD(help, "g", "Displays this screen, help <cmd> for detailed information"),
     CMDLINE_CMD(s, "sgl", "Saves todo list to file"),
@@ -24,11 +32,13 @@ namespace td_utils {
     CMDLINE_CMD(q, "g", "Quit")
   };
 
+  //< count of command line commands
   const unsigned int cmdline_cmds_count = sizeof(cmdline_cmds) / sizeof(cmdline_cmds[0]);
 
   static char * g_parse_str = NULL;
   static unsigned int g_parse_index = 0;
   static unsigned int g_parse_lm = 0;
+
   int check_in_parse_cmdline(char c, const char * str, unsigned int str_l) {
     assert(str && str_l);
     for(unsigned int l = 0; l < str_l; l++) {
@@ -37,6 +47,7 @@ namespace td_utils {
     }
     return false;
   }
+
   char * parse_cmdline(const char * cmd, const char * delim, const char * cmb, int *valid) {
     assert(delim && cmb);
     *valid = 1;
@@ -86,7 +97,12 @@ namespace td_utils {
     return ptr;
   }
 
-#include <unistd.h>
+  /**
+   * @brief executes command line string
+   * @param[in]     cmdline - command line string to execute
+   * @param[in/out] gui     - pointer to the todo gui
+   * @param[in/out] list    - pointer to the todo list
+   */
   void execute_cmdline(const std::string & cmdline, todo_gui * gui,
       todo_list * list) {
     if(cmdline.length() == 0)

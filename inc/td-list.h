@@ -7,7 +7,8 @@
 
 class todo_list : public std::list<todo_item> {
   public:
-    static const std::string default_filename;
+    static const std::string default_filename; //< default filename
+    static std::string current_file;           //< path to current file
   public:
     /**
      * @brief constructor

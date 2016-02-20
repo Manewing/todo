@@ -168,12 +168,15 @@ error_free:
       return -1;
     if(!(params[1] && params[2]))
       return -1;
-    const char * filename =
-      (params[0] == NULL ? todo_list::default_filename.c_str() : static_cast<const char*>(params[0]));
+    const char * filename = (params[0] == NULL) ?
+      todo_list::current_file.c_str() : static_cast<const char*>(params[0]);
     todo_gui * gui = static_cast<todo_gui*>(params[1]);
     todo_list * list = static_cast<todo_list*>(params[2]);
-    list->save(filename);
-    std::string message = "Saved to file: ";
+    std::string message;
+    if(list->save(filename) == 0)
+      message = "Saved to file: ";
+    else
+      message = "Could not save: ";
     message += filename;
     gui->print_msg_u(message);
     return 0;

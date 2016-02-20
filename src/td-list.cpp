@@ -5,7 +5,32 @@
 
 #define MAX_LENGTH 512 //TODO into td-item
 
-const std::string todo_list::default_filename = "test.txt";
+#define TD_LIST_TAG 0xB0
+
+typedef struct {
+  uint8_t __tag;
+  uint32_t __item_count;
+  uint8_t __sort_mode;
+} __attribute__ ((packed)) td_list_file_header;
+
+#define TD_LIST_FILE_HEADER_INITIALIZER \
+  { TD_LIST_TAG, 0, todo_item::ID }
+
+#define TD_ITEM_TAG 0x13
+
+typedef struct {
+  uint8_t __tag;
+  uint8_t __prio;
+  uint8_t __state;
+  uint8_t __name_len;
+  uint16_t __desc_len;
+} __attribute__ ((packed)) td_item_file_header;
+
+#define TD_ITEM_FILE_HEADER_INITIALIZER \
+  { TD_ITEM_TAG, todo_item::NORMAL, todo_item::TODO, 0, 0 }
+
+const std::string todo_list::default_filename = ".list.td";
+std::string todo_list::current_file = "";
 
 todo_list::todo_list() : std::list<todo_item>(), m_sel(end()) {
 }
@@ -74,41 +99,68 @@ int todo_list::print(int row, int col, int size_x, int size_y) {
   return row;
 }
 
+
 uint8_t todo_list::load(const std::string & file_name) {
+  td_list_file_header l_fheader;
+  td_item_file_header i_fheader;
   std::ifstream file;
-  file.open(file_name.c_str(), std::ios_base::in);
-  if(!file) {
-    return 1;
-  }
-  char sort_mode, priority, state;
-  std::string name, comment;
-  file >> sort_mode >> priority >> state;
-  todo_item::sort_mode(sort_mode - 'A');
-  while(!file.eof()) {
-    std::getline(file, name);
-    name = name.substr(1, name.length()); //get rid of space
-    std::getline(file, comment);
-    priority -= 'A'; // human readable and writeable
-    state -= 'A';
-    add_item(todo_item(name, comment, priority, state));
-    file >> priority >> state; //read after EOF so flag is set
+
+  file.open(file_name.c_str(), std::ios::binary | std::ios::in);
+  if(!file) return -1;
+
+  // get char pointer of list header and read it in directly
+  file.read((char*)(&l_fheader), sizeof(td_list_file_header));
+  if(l_fheader.__tag != TD_LIST_TAG) return -2; //file does not represent todo list
+
+  // set sort mode
+  todo_item::sort_mode(l_fheader.__sort_mode);
+
+  // for all items in list
+  for(uint32_t l = 0; l < l_fheader.__item_count && !file.eof(); l++) {
+    // read in item header
+    file.read((char*)(&i_fheader), sizeof(td_item_file_header));
+
+    // allocate memory for name and comment
+    char * name = new char[i_fheader.__name_len+1];
+    char * comment = new char[i_fheader.__desc_len+1];
+    // read in name and comment
+    file.read(name, i_fheader.__name_len);
+    file.read(comment, i_fheader.__desc_len);
+    name[i_fheader.__name_len] = 0;
+    comment[i_fheader.__desc_len] = 0;
+    add_item(todo_item(name, comment, i_fheader.__prio, i_fheader.__state));
+    delete [] name;
+    delete [] comment;
   }
   file.close();
+  todo_list::current_file = file_name;
   return 0;
 }
 
 uint8_t todo_list::save(const std::string & file_name) {
+  td_list_file_header l_fheader = TD_LIST_FILE_HEADER_INITIALIZER;
+  td_item_file_header i_fheader = TD_ITEM_FILE_HEADER_INITIALIZER;
   std::ofstream file;
-  file.open(file_name.c_str(), std::ios_base::out);
-  if(!file)
-    return 1;
-  file << (char)(todo_item::get_sort_mode() + 'A') << " ";
+
+  file.open(file_name.c_str(), std::ios::binary | std::ios::out);
+  if(!file) return -1;
+
+  // set data in header to write
+  l_fheader.__item_count = size();
+  l_fheader.__sort_mode = todo_item::get_sort_mode();
+
+  // write header data to file
+  file.write((const char*)(&l_fheader), sizeof(td_list_file_header));
+
   std::list<todo_item>::const_iterator it;
   for(it = begin(); it != end(); it++) {
-    file << (char)(it->get_priority() + 'A')
-         << " " << (char)(it->get_state() + 'A')
-         << " " << it->get_name() << std::endl
-         << it->get_comment() << std::endl;
+    i_fheader.__prio = it->get_priority();
+    i_fheader.__state = it->get_state();
+    i_fheader.__name_len = it->get_name().size();
+    i_fheader.__desc_len = it->get_comment().size();
+    file.write((const char*)(&i_fheader), sizeof(td_item_file_header));
+    file.write(it->get_name().c_str(), i_fheader.__name_len);
+    file.write(it->get_comment().c_str(), i_fheader.__desc_len);
   }
   file.close();
   return 0;

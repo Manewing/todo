@@ -82,11 +82,6 @@ class todo_item {
     int get_top_row() const { return m_top_row; }
     int get_bottom_row() const { return m_bottom_row; }
 
-    void edit_write(char ch);
-    void edit_bsp();
-    void edit_cleft();
-    void edit_cright();
-
   public:
     td_utils::todo_edit m_text_edit;
 

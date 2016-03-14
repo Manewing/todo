@@ -184,11 +184,3 @@ void todo_item::set_expanded(bool expanded) {
 void todo_item::set_selected(bool selected) {
   m_sel = selected;
 }
-
-/*void todo_item::edit_write(char ch) {
-  std::string str = "";
-  str += ch;
-  m_comment.instert(m_comment_pos++, str);
-  //TODO update gui
-  curs_set(1);
-}*/

@@ -1,3 +1,5 @@
 td
 build/*
 *.txt
+*.swp
+*.td

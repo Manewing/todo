@@ -5,6 +5,8 @@
 #include <iostream>
 #include <string>
 
+#include "td-edit.h"
+
 
 class todo_item {
 
@@ -25,6 +27,9 @@ class todo_item {
               std::string comment,
               uint8_t priority = NORMAL,
               uint8_t state = TODO);
+    todo_item(const todo_item & item);
+    virtual ~todo_item();
+
     /**
      * @brief
      */
@@ -55,16 +60,25 @@ class todo_item {
     static std::string state2string(uint8_t state);
 
     uint32_t get_id() const { return m_ID; }
+
+    void set_name(std::string name) { m_name = name; }
     std::string get_name() const { return m_name; }
+
+    void set_comment(std::string comment) { m_comment = comment; }
     std::string get_comment() const { return m_comment; }
+
+    void set_priority(uint8_t priority) { m_priority = priority; }
     uint8_t get_priority() const { return m_priority; }
+
     void set_state(uint8_t state) { m_state = state; }
     uint8_t get_state() const { return m_state; }
 
     void set_expanded(bool expanded);
     bool is_expanded() const { return m_exp; }
+
     void set_selected(bool selected);
     bool is_selected() const { return m_sel; }
+
     int get_top_row() const { return m_top_row; }
     int get_bottom_row() const { return m_bottom_row; }
 
@@ -73,7 +87,10 @@ class todo_item {
     void edit_cleft();
     void edit_cright();
 
-  private:
+  public:
+    td_utils::todo_edit m_text_edit;
+
+  protected:
     static uint32_t MID;        ///< max ID
     static uint8_t SORT_BY;     ///< sets sort mode
     uint32_t m_ID;              ///< ID of this object

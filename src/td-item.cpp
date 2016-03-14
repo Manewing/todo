@@ -5,8 +5,23 @@
 uint32_t todo_item::MID = 0;
 uint8_t  todo_item::SORT_BY = ID;
 
+void __callback_triggered(void * params[]) {
+  if(!params) return;
+  if(!params[0]) return;
+  todo_item * item = static_cast<todo_item*>(params[0]);
+  std::string text = item->m_text_edit.get_text();
+  item->set_comment(text);
+}
+
 todo_item::todo_item()
-         : m_ID(++MID) {
+         : m_ID(++MID), m_text_edit(TD_EDIT_MULTILINE) {
+  m_text_edit.visible(false);
+  td_callback_wrapper_t * cbwrapper = new td_callback_wrapper_t;
+  cbwrapper->params = new void*[1];
+  cbwrapper->params[0] = this;
+  cbwrapper->param_count = 1;
+  cbwrapper->callback_wrapper = &__callback_triggered;
+  m_text_edit.set_callback(cbwrapper, TD_EDIT_TRIGGERED_CB);
 }
 todo_item::todo_item(std::string name,
                      std::string comment,
@@ -14,7 +29,32 @@ todo_item::todo_item(std::string name,
                      uint8_t state)
          : m_ID(++MID), m_name(name), m_comment(comment),
            m_priority(priority), m_state(state), m_exp(false),
-           m_sel(false), m_top_row(0), m_bottom_row(0), m_line_size(0) {
+           m_sel(false), m_top_row(0), m_bottom_row(0), m_line_size(0),
+           m_text_edit(TD_EDIT_MULTILINE) {
+  m_text_edit.visible(false);
+  td_callback_wrapper_t * cbwrapper = new td_callback_wrapper_t;
+  cbwrapper->params = new void*[1];
+  cbwrapper->params[0] = this;
+  cbwrapper->param_count = 1;
+  cbwrapper->callback_wrapper = &__callback_triggered;
+  m_text_edit.set_callback(cbwrapper, TD_EDIT_TRIGGERED_CB);
+}
+
+todo_item::todo_item(const todo_item & item)
+         : m_ID(item.m_ID), m_name(item.m_name), m_comment(item.m_comment),
+           m_priority(item.m_priority), m_state(item.m_state), m_exp(item.m_exp),
+           m_sel(item.m_sel), m_top_row(item.m_top_row), m_bottom_row(item.m_bottom_row),
+           m_line_size(item.m_line_size), m_text_edit(item.m_text_edit) {
+  td_callback_wrapper_t * cbwrapper = new td_callback_wrapper_t;
+  cbwrapper->params = new void*[1];
+  cbwrapper->params[0] = this;
+  cbwrapper->param_count = 1;
+  cbwrapper->callback_wrapper = &__callback_triggered;
+  m_text_edit.set_callback(cbwrapper, TD_EDIT_TRIGGERED_CB);
+}
+
+todo_item::~todo_item() {
+  //nothing todo
 }
 
 void todo_item::make(std::string name,
@@ -25,6 +65,8 @@ void todo_item::make(std::string name,
   m_comment = comment;
   m_priority = priority;
   m_state = state;
+  m_text_edit.visible(false);
+  m_text_edit.set_text(m_comment);
 }
 
 bool todo_item::operator<(const todo_item& it) const {
@@ -44,7 +86,7 @@ bool todo_item::operator<(const todo_item& it) const {
 
 #define PRINT_OFFSET_BACK 19 //TODO dynamic?
 #define PRINT_OFFSET_EXP   9
-#define PRINT_OFFSET_CMB   2
+#define PRINT_OFFSET_CMB   3
 
 int todo_item::format_comment(int new_line_size) {
   const char * new_line = "-\n            ";
@@ -92,9 +134,13 @@ int todo_item::print(int row, int col, int size_x,
 
   if(m_exp) { //print expanded
     mvprintw(row++, col+PRINT_OFFSET_EXP, "| Description:");
-    //TODO use addstr with param n instead of format function
-    int rows = format_comment(size_x - PRINT_OFFSET_CMB - PRINT_OFFSET_EXP - 3);
-    mvprintw(row, col+PRINT_OFFSET_EXP, "-> %s", m_comment_fmt.c_str());
+    mvprintw(row, col+PRINT_OFFSET_EXP, "-> ");
+    td_screen_pos_t pos = { col + PRINT_OFFSET_EXP + PRINT_OFFSET_CMB, row };
+    td_screen_pos_t end = { size_x - PRINT_OFFSET_BACK - 3, row };
+    m_text_edit.set_pos(pos);
+    m_text_edit.set_end(end);
+    m_text_edit.set_text(m_comment);
+    int rows = m_text_edit.print();
     row += rows;
     m_bottom_row = ++row;
     return 2 + rows;
@@ -132,6 +178,7 @@ std::string todo_item::state2string(uint8_t state) {
 
 void todo_item::set_expanded(bool expanded) {
   m_exp = expanded;
+  m_text_edit.visible(expanded);
 }
 
 void todo_item::set_selected(bool selected) {

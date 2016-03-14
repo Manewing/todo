@@ -1,11 +1,26 @@
-#include <td-gui.h>
+#include "td-gui.h"
+
+#include "td-cmd.h"
 
 
 namespace td_utils {
 
+  void callback_exec_cmdline(void * params[]) {
+    if(!params) return;
+    if(!params[0] || !params[1]) return;
+    todo_gui * gui = static_cast<todo_gui*>(params[0]);
+    todo_list * list = static_cast<todo_list*>(params[1]);
+    execute_cmdline(gui->m_cmdline_edit.get_text(), gui, list);
+    gui->m_cmdline_edit.clear();
+    gui->m_cmdline_edit.visible(false);
+    gui->set_focus(td_utils::todo_gui::NO_FOCUS);
+    gui->update();
+  }
+
   todo_gui::todo_gui(todo_list &list)
           : m_quit(false), m_scroll(0), m_focus(NO_FOCUS),
             m_list(list), m_msg_u(),
+            m_cmdline_edit(TD_EDIT_HISTORY, ":"),
             m_cmdline(":"), m_cmdline_pos(1),
             m_cmdline_history(), m_cmdline_histptr(m_cmdline_history.end()) {
     // ncurses init
@@ -23,6 +38,19 @@ namespace td_utils {
 
     //update
     update();
+
+    td_screen_pos_t pos = { 0, m_row-1 };
+    td_screen_pos_t end = { m_col, m_row-1 };
+    td_callback_wrapper_t * cbwrapper = new td_callback_wrapper_t;
+    cbwrapper->params = new void*[2];
+    cbwrapper->params[0] = this;
+    cbwrapper->params[1] = &list;
+    cbwrapper->param_count = 2;
+    cbwrapper->callback_wrapper = &callback_exec_cmdline;
+    m_cmdline_edit.set_pos(pos);
+    m_cmdline_edit.set_end(end);
+    m_cmdline_edit.set_callback(cbwrapper, todo_gui::CMDK_ENTER);
+    m_cmdline_edit.visible(false);
   }
 
   todo_gui::~todo_gui() {
@@ -102,9 +130,7 @@ namespace td_utils {
   }
 
   void todo_gui::add_cmdline(char ch) {
-    std::string str = "";
-    str += ch;
-    m_cmdline.insert(m_cmdline_pos, str);
+    m_cmdline.insert(m_cmdline_pos, 1, ch);
     m_cmdline_pos++;
     print_msg(m_cmdline);
     print_msg(m_cmdline.substr(0, m_cmdline_pos));

@@ -13,7 +13,8 @@ namespace td_utils {
    */
   todo_edit::todo_edit(int style, std::string prefix)
            : m_visible(true), m_style(style), m_prefix(prefix),
-             m_text(), m_cursor_pos(0), m_history(), m_callbacks() {
+             m_text(), m_cursor_pos(0), m_history(),
+             m_history_ptr(m_history.begin()), m_callbacks() {
     m_pos.scr_x = 0;
     m_pos.scr_y = 0;
     m_end.scr_x = 0;
@@ -24,7 +25,7 @@ namespace td_utils {
            : m_visible(edit.m_visible), m_style(edit.m_style), m_pos(edit.m_pos),
              m_end(edit.m_end), m_prefix(edit.m_prefix), m_text(edit.m_text),
              m_cursor_pos(edit.m_cursor_pos), m_history(edit.m_history),
-             m_callbacks() {
+             m_history_ptr(m_history.begin()), m_callbacks() {
   }
 
   /**
@@ -48,11 +49,23 @@ namespace td_utils {
     if(m_style & TD_EDIT_SINGLELINE) { // singleline edit
       switch(input) {
         case td_utils::todo_gui::CMDK_ARROW_UP:
-          if(m_style & __TD_EDIT_HISTORY) {
+          if(m_style & __TD_EDIT_HISTORY && !m_history.empty()) {
+            if(m_history_ptr != m_history.begin())
+              m_history_ptr--;
+            m_text = *m_history_ptr;
+            m_cursor_pos = m_text.length();
           }
           break;
         case td_utils::todo_gui::CMDK_ARROW_DOWN:
-          if(m_style & __TD_EDIT_HISTORY) {
+          if(m_style & __TD_EDIT_HISTORY && !m_history.empty()) {
+            if(m_history_ptr == m_history.end() ||
+                m_history_ptr == --m_history.end()) {
+              m_history_ptr = m_history.end();
+              m_text = "";
+            }
+            else
+              m_text = *(++m_history_ptr);
+            m_cursor_pos = m_text.length();
           }
           break;
         case td_utils::todo_gui::CMDK_ARROW_LEFT:
@@ -63,15 +76,28 @@ namespace td_utils {
           if(m_cursor_pos < m_text.length())
             m_cursor_pos++;
           break;
+        case td_utils::todo_gui::CMDK_ENTER:
+          if(m_style & __TD_EDIT_HISTORY) {
+            m_history.push_back(m_text);
+            m_history_ptr = m_history.end();
+          }
+          break;
         case td_utils::todo_gui::CMDK_DELETE:
           del_char(true);
+          if(m_style & __TD_EDIT_HISTORY)
+            m_history_ptr = m_history.end();
           break;
         case td_utils::todo_gui::CMDK_BACKSPACE:
           del_char(false);
+          if(m_style & __TD_EDIT_HISTORY)
+            m_history_ptr = m_history.end();
           break;
         default:
-          if(is_valid(input))
+          if(is_valid(input)) {
             add_char(input & 0xFF);
+            if(m_style & __TD_EDIT_HISTORY)
+              m_history_ptr = m_history.end();
+          }
           break;
       }
     } else { //multiline edit
@@ -129,14 +155,23 @@ namespace td_utils {
 
   //< if edit is visible prints edit to screen
   int todo_edit::print() {
-    int row_count = 0;
+    // do not need to do anything if not visible
     if(!m_visible) return 0;
+
+    int row_count = 0;
     std::string str = m_prefix + m_text + " ";
     const int size_x = m_end.scr_x - m_pos.scr_x - 1;
+
     if(m_style & TD_EDIT_SINGLELINE) { // singleline edit
       unsigned int actual_cursor_pos = m_cursor_pos + m_prefix.length() + 1;
       int start_pos = ((int)actual_cursor_pos - size_x) > 0 ?
         ((int)actual_cursor_pos - size_x) : 0;
+
+      // clear line TODO check for better way!
+      move(m_pos.scr_y, m_pos.scr_x);
+      for(int l = 0; l < size_x; l++)
+        addch(' ');
+
       mvaddnstr(m_pos.scr_y, m_pos.scr_x, str.c_str() + start_pos, size_x);
       str = m_prefix + m_text.substr(0, m_cursor_pos);
       mvaddnstr(m_pos.scr_y, m_pos.scr_x, str.c_str() + start_pos, size_x);

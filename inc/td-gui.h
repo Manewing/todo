@@ -43,21 +43,17 @@ namespace td_utils {
       void print_msg(std::string msg);
       void print_msg_u(std::string msg) { m_msg_u = msg; }
 
-      void start_cmdline();
-      void add_cmdline(char ch);
-      void bsp_cmdline();
-      void clear_cmdline();
-      void cleft_cmdline();
-      void cright_cmdline();
-      void add_cmdline_history();
-      void get_prev_cmdline();
-      void get_next_cmdline();
-
       std::string get_cmdline();
       void set_focus(int focus) { m_focus = focus; }
       int get_focus() const { return m_focus; }
       void quit();
       bool is_running();
+
+    private:
+      /* disabled */
+      todo_gui(const todo_gui&);
+      todo_gui operator=(const todo_gui&);
+
     public:
       int m_row;
       int m_col;
@@ -68,11 +64,6 @@ namespace td_utils {
       int          m_focus;       //< current focus type
       todo_list   &m_list;        //< reference to the actual todo list data
       std::string  m_msg_u;
-
-      std::string  m_cmdline;
-      unsigned int m_cmdline_pos;
-      std::list<std::string> m_cmdline_history;
-      std::list<std::string>::iterator m_cmdline_histptr;
   };
 
 }; // namespace td_utils

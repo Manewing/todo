@@ -20,9 +20,7 @@ namespace td_utils {
   todo_gui::todo_gui(todo_list &list)
           : m_quit(false), m_scroll(0), m_focus(NO_FOCUS),
             m_list(list), m_msg_u(),
-            m_cmdline_edit(TD_EDIT_HISTORY, ":"),
-            m_cmdline(":"), m_cmdline_pos(1),
-            m_cmdline_history(), m_cmdline_histptr(m_cmdline_history.end()) {
+            m_cmdline_edit(TD_EDIT_HISTORY, ":") {
     // ncurses init
     initscr();
     raw();
@@ -78,6 +76,7 @@ namespace td_utils {
     //draw header
     char filler[HEADER_OFFSET+1] = { ' ', '_', ' ', '-', ' ', ' ' };
     int fillpos[HEADER_OFFSET+1] = {  0,   1,   2,   3,   4,   m_row-1 };
+    //TODO check for better way
     for(int y = 0; y < HEADER_OFFSET+1; y++) {
       move(fillpos[y], 0);
       for(int x = 0; x < m_col; x++) {
@@ -120,84 +119,6 @@ namespace td_utils {
   void todo_gui::print_msg(std::string msg) { //TODO colored?
     mvprintw(m_row-1, 0, "%s", msg.c_str());
     refresh(); // no need to update everything
-  }
-
-  void todo_gui::start_cmdline() {
-    update();
-    m_cmdline_pos = m_cmdline.length();
-    print_msg(m_cmdline);
-    curs_set(1);
-  }
-
-  void todo_gui::add_cmdline(char ch) {
-    m_cmdline.insert(m_cmdline_pos, 1, ch);
-    m_cmdline_pos++;
-    print_msg(m_cmdline);
-    print_msg(m_cmdline.substr(0, m_cmdline_pos));
-    m_cmdline_histptr = m_cmdline_history.end();
-    curs_set(1);
-  }
-
-  void todo_gui::bsp_cmdline() {
-    if(m_cmdline.length() <= 1) //dont delete ':'
-      return;
-    m_cmdline.erase(m_cmdline_pos-1, 1);
-    m_cmdline_pos--;
-    print_msg(m_cmdline + " ");
-    print_msg(m_cmdline.substr(0, m_cmdline_pos));
-    m_cmdline_histptr = m_cmdline_history.end();
-    curs_set(1);
-  }
-
-  void todo_gui::clear_cmdline() {
-    m_cmdline_pos = 1;
-    m_cmdline = ":";
-    update();
-  }
-
-  void todo_gui::cleft_cmdline() {
-    if(m_cmdline_pos > 1) {
-      m_cmdline_pos--;
-      print_msg(m_cmdline.substr(0, m_cmdline_pos)); //update curser
-      curs_set(1);
-    }
-  }
-
-  void todo_gui::cright_cmdline() {
-    if(m_cmdline_pos < m_cmdline.length()) {
-      m_cmdline_pos++;
-      print_msg(m_cmdline.substr(0, m_cmdline_pos)); //update curser
-      curs_set(1);
-    }
-  }
-
-  void todo_gui::add_cmdline_history() {
-    m_cmdline_history.push_back(m_cmdline);
-    m_cmdline_histptr = m_cmdline_history.end();
-  }
-
-  void todo_gui::get_prev_cmdline() {
-    if(m_cmdline_history.empty())
-      return;
-    if(m_cmdline_histptr != m_cmdline_history.begin())
-      m_cmdline_histptr--;
-    m_cmdline = *m_cmdline_histptr;
-    start_cmdline();
-  }
-
-  void todo_gui::get_next_cmdline() {
-    if(m_cmdline_history.empty())
-      return;
-    if(m_cmdline_histptr == m_cmdline_history.end()
-        || m_cmdline_histptr == --m_cmdline_history.end())
-      m_cmdline = ":";
-    else
-      m_cmdline = *(++m_cmdline_histptr);
-    start_cmdline();
-  }
-
-  std::string todo_gui::get_cmdline() {
-    return m_cmdline.substr(1, m_cmdline.length());
   }
 
   void todo_gui::quit() {

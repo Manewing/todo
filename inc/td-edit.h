@@ -96,7 +96,7 @@ namespace td_utils {
       void del_char(bool at);
 
     private:
-      //todo_edit operator=(const todo_edit&);
+      todo_edit operator=(const todo_edit&);
 
     protected:
       bool m_visible;
@@ -107,6 +107,7 @@ namespace td_utils {
       std::string m_text;
       unsigned int m_cursor_pos;
       std::list<std::string> m_history;
+      std::list<std::string>::iterator m_history_ptr;
       std::map<int, td_callback_wrapper_t*> m_callbacks;
 
   };

@@ -54,16 +54,17 @@ namespace td_utils {
       todo_gui(const todo_gui&);
       todo_gui operator=(const todo_gui&);
 
-    public:
-      int m_row;
-      int m_col;
-      todo_edit    m_cmdline_edit;
     protected:
       bool         m_quit;        //< true if to quit
       int          m_scroll;      //< current scroll position
       int          m_focus;       //< current focus type
       todo_list   &m_list;        //< reference to the actual todo list data
       std::string  m_msg_u;
+
+    public:
+      int m_row;
+      int m_col;
+      todo_edit    m_cmdline_edit;
   };
 
 }; // namespace td_utils

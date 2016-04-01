@@ -9,40 +9,33 @@
 
 namespace td_utils {
 
-#define TD_EDIT_MULTILINE   0x00
-#define TD_EDIT_SINGLELINE  0x01
-#define __TD_EDIT_HISTORY   0x02
-#define TD_EDIT_HISTORY     ( TD_EDIT_SINGLELINE | __TD_EDIT_HISTORY )
-
 #define TD_EDIT_VALID_CHAR_START 0x20
 #define TD_EDIT_VALID_CHAR_END   0x7E
 #define TD_EDIT_TRIGGERED_CB     0xFF
 
-  class todo_edit {
+  class todo_edit_base {
     public:
       /**
        * @brief constructor, creates new todo text edit
-       * @param[in] style  - style of text edit
-       * @param[in] prefix - prefix that shall be added to text
        */
-      todo_edit(int style, std::string prefix = "");
+      todo_edit_base();
 
       /**
        * @brief copy constructor, creates new todo text edit
        * @param[in] edit - edit to copy
        */
-      todo_edit(const todo_edit & edit);
+      todo_edit_base(const todo_edit_base&);
 
       /**
        * @brief destructor
        */
-      virtual ~todo_edit();
+      virtual ~todo_edit_base();
 
       /**
        * @brief callback if new input has occurred
        * @param[in] input - new user input
        */
-      void callback(int input);
+      virtual void callback(int input);
 
       /**
        * @brief sets callback for given input
@@ -52,7 +45,7 @@ namespace td_utils {
       void set_callback(td_callback_wrapper_t * cbwrapper, int input);
 
       //< if edit is visible prints edit to screen
-      int print();
+      virtual int print() const = 0;
 
       //< clears edit
       void clear();
@@ -95,21 +88,59 @@ namespace td_utils {
        */
       void del_char(bool at);
 
+    protected:
+      bool m_visible;
+      td_screen_pos_t m_pos;
+      td_screen_pos_t m_end;
+      std::string m_text;
+      unsigned int m_cursor_pos;
+      std::map<int, td_callback_wrapper_t*> m_callbacks;
+  };
+
+  class todo_edit : public todo_edit_base {
+    public:
+      /**
+       * @brief constructor, creates new todo text edit (single line)
+       * @param[in] prefix - prefix that shall be added to text
+       */
+      todo_edit(std::string prefix = "");
+
+      /**
+       * @brief copy constructor, creates new todo text edit
+       * @param[in] edit - edit to copy
+       */
+      todo_edit(const todo_edit & edit);
+
+      /**
+       * @brief callback if new input has occurred
+       * @param[in] input - new user input
+       */
+      virtual void callback(int input);
+
+      //< if edit is visible prints edit to screen
+      virtual int print() const;
+
     private:
       todo_edit operator=(const todo_edit&);
 
     protected:
-      bool m_visible;
-      int  m_style;
-      td_screen_pos_t m_pos;
-      td_screen_pos_t m_end;
       std::string m_prefix;
-      std::string m_text;
-      unsigned int m_cursor_pos;
       std::list<std::string> m_history;
       std::list<std::string>::iterator m_history_ptr;
-      std::map<int, td_callback_wrapper_t*> m_callbacks;
+  };
 
+  class todo_multiline_edit : public todo_edit_base {
+    public:
+      /**
+       * @brief callback if new input has occurred
+       * @param[in] input - new user input
+       */
+      virtual void callback(int input);
+
+      //< if edit is visible prints edit to screen
+      virtual int print() const;
+    private:
+      todo_multiline_edit operator=(const todo_multiline_edit&);
   };
 
 }; // namespace td_utils

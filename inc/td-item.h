@@ -41,9 +41,6 @@ class todo_item {
     bool operator < (const todo_item& it) const;
     bool operator == (const todo_item& it) const { return m_ID == it.m_ID; }
 
-
-    int format_comment(int line_size);
-
     /**
      * @brief prints item
      * @param[in] row    - the row to start printing the item
@@ -59,6 +56,10 @@ class todo_item {
 
     static std::string state2string(uint8_t state);
 
+    static void set_mid(uint32_t mid) { MID = mid; }
+    static uint32_t get_mid() { return MID; }
+
+    void set_id(uint32_t id) { m_ID = id; }
     uint32_t get_id() const { return m_ID; }
 
     void set_name(std::string name) { m_name = name; }
@@ -82,24 +83,22 @@ class todo_item {
     int get_top_row() const { return m_top_row; }
     int get_bottom_row() const { return m_bottom_row; }
 
-  public:
-    td_utils::todo_edit m_text_edit;
-
   protected:
     static uint32_t MID;        ///< max ID
     static uint8_t SORT_BY;     ///< sets sort mode
+
     uint32_t m_ID;              ///< ID of this object
     std::string m_name;         ///< name
     std::string m_comment;      ///< comment
-    std::string m_comment_fmt;  ///< formated comment
     uint8_t m_priority;         ///< priority
     uint8_t m_state;            ///< state
     bool m_exp;                 ///< true if expanded
     bool m_sel;
     int  m_top_row;
     int  m_bottom_row;
-    int  m_line_size;
-    int  m_rows;
+
+  public:
+    td_utils::todo_multiline_edit m_text_edit;
 
 };
 

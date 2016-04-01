@@ -110,6 +110,10 @@ namespace td_utils {
     const char * delim = " \n.:,;";
     int valid = 1;
     char * ptr = parse_cmdline(cmdline.c_str(), delim, "\"", &valid);
+    if(ptr == NULL) { // could not parse command line -> invalid
+      gui->print_msg_u("Invalid expression...");
+      return;
+    }
 
     todo_cmdline * cl = NULL;
     for(unsigned int l = 0; l < cmdline_cmds_count; l++) {
@@ -148,7 +152,8 @@ namespace td_utils {
       }
       params[argc] = NULL;
     }
-    cl->cmdline_execute(params);
+    if(cl->cmdline_execute(params) != 0)
+      gui->print_msg_u("Invalid command or missing parameter...");
 error_free:
     free(params);
   }

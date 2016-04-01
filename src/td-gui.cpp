@@ -20,7 +20,7 @@ namespace td_utils {
   todo_gui::todo_gui(todo_list &list)
           : m_quit(false), m_scroll(0), m_focus(NO_FOCUS),
             m_list(list), m_msg_u(),
-            m_cmdline_edit(TD_EDIT_HISTORY, ":") {
+            m_cmdline_edit(":") {
     // ncurses init
     initscr();
     raw();
@@ -74,14 +74,16 @@ namespace td_utils {
     m_list.print(row + HEADER_OFFSET + m_scroll, col, m_col, m_row - BOTTOM_OFFSET);
 
     //draw header
-    char filler[HEADER_OFFSET+1] = { ' ', '_', ' ', '-', ' ', ' ' };
+    char filler[HEADER_OFFSET+1] = { ' ', '-', ' ', '-', ' ', ' ' };
     int fillpos[HEADER_OFFSET+1] = {  0,   1,   2,   3,   4,   m_row-1 };
     //TODO check for better way
     for(int y = 0; y < HEADER_OFFSET+1; y++) {
       move(fillpos[y], 0);
-      for(int x = 0; x < m_col; x++) {
+      addch('+');
+      for(int x = 1; x < m_col-1; x++) {
         addch(filler[y]);
       }
+      addch('+');
     }
     int cpos1 = 0, cpos2 = 0;
     mvprintw(0, (m_col-TD_HEADER_SIZE)/2, "%s", TD_HEADER_STR);

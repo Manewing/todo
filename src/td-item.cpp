@@ -14,7 +14,7 @@ void __callback_triggered(void * params[]) {
 }
 
 todo_item::todo_item()
-         : m_ID(++MID), m_text_edit(TD_EDIT_MULTILINE) {
+         : m_ID(++MID), m_text_edit() {
   m_text_edit.visible(false);
   td_callback_wrapper_t * cbwrapper = new td_callback_wrapper_t;
   cbwrapper->params = new void*[1];
@@ -29,8 +29,8 @@ todo_item::todo_item(std::string name,
                      uint8_t state)
          : m_ID(++MID), m_name(name), m_comment(comment),
            m_priority(priority), m_state(state), m_exp(false),
-           m_sel(false), m_top_row(0), m_bottom_row(0), m_line_size(0),
-           m_text_edit(TD_EDIT_MULTILINE) {
+           m_sel(false), m_top_row(0), m_bottom_row(0),
+           m_text_edit() {
   m_text_edit.visible(false);
   td_callback_wrapper_t * cbwrapper = new td_callback_wrapper_t;
   cbwrapper->params = new void*[1];
@@ -44,7 +44,7 @@ todo_item::todo_item(const todo_item & item)
          : m_ID(item.m_ID), m_name(item.m_name), m_comment(item.m_comment),
            m_priority(item.m_priority), m_state(item.m_state), m_exp(item.m_exp),
            m_sel(item.m_sel), m_top_row(item.m_top_row), m_bottom_row(item.m_bottom_row),
-           m_line_size(item.m_line_size), m_text_edit(item.m_text_edit) {
+           m_text_edit(item.m_text_edit) {
   td_callback_wrapper_t * cbwrapper = new td_callback_wrapper_t;
   cbwrapper->params = new void*[1];
   cbwrapper->params[0] = this;
@@ -88,21 +88,6 @@ bool todo_item::operator<(const todo_item& it) const {
 #define PRINT_OFFSET_EXP   9
 #define PRINT_OFFSET_CMB   3
 
-int todo_item::format_comment(int new_line_size) {
-  const char * new_line = "-\n            ";
-  if(m_line_size == new_line_size)
-    return m_rows;
-  int insert_off = 0, pos = 1;
-  m_rows = 1;
-  m_line_size = new_line_size;
-  m_comment_fmt = m_comment;
-  for(int l = m_comment.length(); l > m_line_size; l -= m_line_size) {
-    m_comment_fmt.insert((pos++)*m_line_size + insert_off, new_line);
-    m_rows++;
-  }
-  return m_rows;
-}
-
 int todo_item::print(int row, int col, int size_x,
     int size_y __attribute__ ((unused)) ) {
   int draw_pos = 0;
@@ -112,7 +97,7 @@ int todo_item::print(int row, int col, int size_x,
     attron(A_BOLD);
 
   //print #ID Name
-  mvprintw(row++, col, "%s#%04d %n[%c] %s",
+  mvprintw(row++, col, "%s#%04X %n[%c] %s",
       (m_sel ? "->" : "  "), m_ID, &draw_pos, (m_exp ? '-' : '+'), m_name.c_str());
 
   mvchgat(row-1, 2, 5, (m_sel ? A_BOLD : A_NORMAL), 4, NULL);

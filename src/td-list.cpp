@@ -11,10 +11,12 @@ typedef struct {
   uint8_t __tag;
   uint32_t __item_count;
   uint8_t __sort_mode;
+  uint32_t __mid;
+  uint8_t __reserved[22];
 } __attribute__ ((packed)) td_list_file_header;
 
 #define TD_LIST_FILE_HEADER_INITIALIZER \
-  { TD_LIST_TAG, 0, todo_item::ID }
+  { TD_LIST_TAG, 0, todo_item::ID, todo_item::get_mid(), {0} }
 
 #define TD_ITEM_TAG 0x13
 
@@ -24,10 +26,12 @@ typedef struct {
   uint8_t __state;
   uint8_t __name_len;
   uint16_t __desc_len;
+  uint32_t __id;
+  uint8_t __reserved[22];
 } __attribute__ ((packed)) td_item_file_header;
 
 #define TD_ITEM_FILE_HEADER_INITIALIZER \
-  { TD_ITEM_TAG, todo_item::NORMAL, todo_item::TODO, 0, 0 }
+  { TD_ITEM_TAG, todo_item::NORMAL, todo_item::TODO, 0, 0, 0, {0} }
 
 const std::string todo_list::default_filename = ".list.td";
 std::string todo_list::current_file = "";
@@ -128,10 +132,16 @@ uint8_t todo_list::load(const std::string & file_name) {
     file.read(comment, i_fheader.__desc_len);
     name[i_fheader.__name_len] = 0;
     comment[i_fheader.__desc_len] = 0;
-    add_item(todo_item(name, comment, i_fheader.__prio, i_fheader.__state));
+    todo_item item(name, comment, i_fheader.__prio, i_fheader.__state);
+    item.set_id(i_fheader.__id);
+    add_item(item);
     delete [] name;
     delete [] comment;
   }
+
+  // mid gets change due to constructor set after all items are created
+  todo_item::set_mid(l_fheader.__mid);
+
   file.close();
   todo_list::current_file = file_name;
   return 0;
@@ -148,6 +158,7 @@ uint8_t todo_list::save(const std::string & file_name) {
   // set data in header to write
   l_fheader.__item_count = size();
   l_fheader.__sort_mode = todo_item::get_sort_mode();
+  l_fheader.__mid = todo_item::get_mid();
 
   // write header data to file
   file.write((const char*)(&l_fheader), sizeof(td_list_file_header));
@@ -158,6 +169,7 @@ uint8_t todo_list::save(const std::string & file_name) {
     i_fheader.__state = it->get_state();
     i_fheader.__name_len = it->get_name().size();
     i_fheader.__desc_len = it->get_comment().size();
+    i_fheader.__id = it->get_id();
     file.write((const char*)(&i_fheader), sizeof(td_item_file_header));
     file.write(it->get_name().c_str(), i_fheader.__name_len);
     file.write(it->get_comment().c_str(), i_fheader.__desc_len);

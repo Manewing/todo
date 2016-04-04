@@ -42,18 +42,18 @@ namespace td_utils {
    */
   void todo_edit_base::callback(int input) {
     switch(input) {
-      case td_utils::todo_gui::CMDK_ARROW_LEFT:
+      case CMDK_ARROW_LEFT:
         if(m_cursor_pos > 1)
           m_cursor_pos--;
         break;
-      case td_utils::todo_gui::CMDK_ARROW_RIGHT:
+      case CMDK_ARROW_RIGHT:
         if(m_cursor_pos < m_text.length())
           m_cursor_pos++;
         break;
-      case td_utils::todo_gui::CMDK_DELETE:
+      case CMDK_DELETE:
         del_char(true);
         break;
-      case td_utils::todo_gui::CMDK_BACKSPACE:
+      case CMDK_BACKSPACE:
         del_char(false);
         break;
       default:
@@ -130,13 +130,13 @@ namespace td_utils {
 
   void todo_edit::callback(int input) {
     switch(input) {
-      case td_utils::todo_gui::CMDK_ARROW_UP:
+      case CMDK_ARROW_UP:
         if(m_history_ptr != m_history.begin())
           m_history_ptr--;
         m_text = *m_history_ptr;
         m_cursor_pos = m_text.length();
         break;
-      case td_utils::todo_gui::CMDK_ARROW_DOWN:
+      case CMDK_ARROW_DOWN:
         if(m_history_ptr == m_history.end() ||
             m_history_ptr == --m_history.end()) {
           m_history_ptr = m_history.end();
@@ -146,12 +146,12 @@ namespace td_utils {
           m_text = *(++m_history_ptr);
         m_cursor_pos = m_text.length();
         break;
-      case td_utils::todo_gui::CMDK_ENTER:
+      case CMDK_ENTER:
         m_history.push_back(m_text);
         m_history_ptr = m_history.end();
         break;
-      case td_utils::todo_gui::CMDK_DELETE:
-      case td_utils::todo_gui::CMDK_BACKSPACE:
+      case CMDK_DELETE:
+      case CMDK_BACKSPACE:
         m_history_ptr = m_history.end();
         break;
       default:
@@ -195,11 +195,11 @@ namespace td_utils {
 
   void todo_multiline_edit::callback(int input) {
     switch(input) {
-      case td_utils::todo_gui::CMDK_ARROW_UP:
+      case CMDK_ARROW_UP:
         if((int)m_cursor_pos - (m_end.scr_x - m_pos.scr_x) > 0)
           m_cursor_pos -= (m_end.scr_x - m_pos.scr_x - 1) ;
         break;
-      case td_utils::todo_gui::CMDK_ARROW_DOWN:
+      case CMDK_ARROW_DOWN:
         if((int)m_cursor_pos + (m_end.scr_x - m_pos.scr_x) < (int)m_text.length())
           m_cursor_pos += (m_end.scr_x - m_pos.scr_x - 1);
         break;

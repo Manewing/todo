@@ -46,19 +46,19 @@ int main(int argc, char * argv[]) {
     switch(gui.get_focus()) {
       case td_utils::todo_gui::NO_FOCUS:
         switch(input) {
-          case td_utils::todo_gui::CMDK_ENTER:
+          case CMDK_ENTER:
             gui.expand_item();
             break;
-          case td_utils::todo_gui::CMDK_START_CMD: // ':'
+          case CMDK_START_CMD: // ':'
             gui.set_focus(td_utils::todo_gui::CMD_LINE_FOCUS);
             gui.m_cmdline_edit.visible(true);
             gui.m_cmdline_edit.print();
             //gui.start_cmdline();
             break;
-          case td_utils::todo_gui::CMDK_EXIT:  // 'q'
+          case CMDK_EXIT:  // 'q'
             gui.quit();
             break;
-          case td_utils::todo_gui::CMDK_EDIT: // 'e'
+          case CMDK_EDIT: // 'e'
             gui.set_focus(td_utils::todo_gui::ITEM_FOCUS);
             if(list.get_selection()) {
               if(!list.get_selection()->is_expanded())
@@ -66,10 +66,10 @@ int main(int argc, char * argv[]) {
               list.get_selection()->m_text_edit.print();
             }
             break;
-          case td_utils::todo_gui::CMDK_ARROW_DOWN:
+          case CMDK_ARROW_DOWN:
             gui.scroll_down();
             break;
-          case td_utils::todo_gui::CMDK_ARROW_UP:
+          case CMDK_ARROW_UP:
             gui.scroll_up();
             break;
           default:
@@ -79,7 +79,7 @@ int main(int argc, char * argv[]) {
         break;
       case td_utils::todo_gui::ITEM_FOCUS:
         switch(input) {
-          case td_utils::todo_gui::CMDK_ESCAPE:
+          case CMDK_ESCAPE:
             gui.set_focus(td_utils::todo_gui::NO_FOCUS);
             gui.update();
             break;
@@ -92,7 +92,7 @@ int main(int argc, char * argv[]) {
         break;
       case td_utils::todo_gui::CMD_LINE_FOCUS:
         switch(input) {
-          case td_utils::todo_gui::CMDK_ESCAPE:
+          case CMDK_ESCAPE:
             gui.m_cmdline_edit.visible(false);
             gui.m_cmdline_edit.clear();
             gui.set_focus(td_utils::todo_gui::NO_FOCUS);

@@ -12,12 +12,6 @@ namespace td_utils {
   class todo_gui {
     public:
       enum { NO_FOCUS, ITEM_FOCUS, CMD_LINE_FOCUS };
-      enum { CMDK_ENTER = 0x0A, CMDK_ESCAPE = 0x1B,
-             CMDK_EXIT = 0x71, CMDK_START_CMD = 0x3A,
-             CMDK_DELETE = 0x7F, CMDK_EDIT = 0x65,
-             CMDK_UNDO = 0x75, CMDK_ARROW_DOWN = 0x102,
-             CMDK_ARROW_UP = 0x103, CMDK_ARROW_LEFT = 0x104,
-             CMDK_ARROW_RIGHT = 0x105, CMDK_BACKSPACE = 0x107 };
     public:
       /**
        * @brief constructor

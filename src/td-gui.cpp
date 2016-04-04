@@ -47,7 +47,7 @@ namespace td_utils {
     cbwrapper->callback_wrapper = &callback_exec_cmdline;
     m_cmdline_edit.set_pos(pos);
     m_cmdline_edit.set_end(end);
-    m_cmdline_edit.set_callback(cbwrapper, todo_gui::CMDK_ENTER);
+    m_cmdline_edit.set_callback(cbwrapper, CMDK_ENTER);
     m_cmdline_edit.visible(false);
   }
 

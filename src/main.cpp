@@ -34,16 +34,24 @@ int main(int argc, char * argv[]) {
     todo_list::current_file = path;
   }
 
-  todo_list list;
-  td_utils::todo_gui gui(list);
 
-  list.load(path);
+  //TODO make static function for ncurses init
+  initscr();
+  raw();
+  keypad(stdscr, true);
+  noecho();
+  set_escdelay(0);
+
+  td_utils::todo_gui gui;
+
+  gui.m_list.load(path);
   gui.update();
 
 
   while(gui.is_running()) {
     input = getch();
-    switch(gui.get_focus()) {
+    gui.callback(input);
+   /* switch(gui.get_focus()) {
       case td_utils::todo_gui::NO_FOCUS:
         switch(input) {
           case CMDK_ENTER:
@@ -105,7 +113,7 @@ int main(int argc, char * argv[]) {
       default:
         gui.set_focus(td_utils::todo_gui::NO_FOCUS);
         break;
-    }
+    }*/
   }
 
   free(path);

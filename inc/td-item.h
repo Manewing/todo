@@ -4,11 +4,11 @@
 #include <stdint.h>
 #include <iostream>
 #include <string>
-
+#include <ncurses.h>
 #include "td-edit.h"
 
 
-class todo_item {
+class todo_item : public td_utils::todo_widget {
 
   public:
     typedef enum { INVALID_STATE, TODO, WORK_IN_PRG, DONE } TD_STATE;
@@ -21,25 +21,20 @@ class todo_item {
     /**
      * @brief constructor
      */
-    todo_item();
+    todo_item(todo_widget * parent);
 
-    todo_item(std::string name,
+    todo_item(todo_widget * parent,
+              std::string name,
               std::string comment,
               uint8_t priority = NORMAL,
               uint8_t state = TODO);
     todo_item(const todo_item & item);
     virtual ~todo_item();
 
-    /**
-     * @brief
-     */
-    void make(std::string name,
-              std::string comment,
-              uint8_t priority = NORMAL,
-              uint8_t state = TODO);
-
     bool operator < (const todo_item& it) const;
     bool operator == (const todo_item& it) const { return m_ID == it.m_ID; }
+
+    virtual int callback(int input);
 
     /**
      * @brief prints item
@@ -49,12 +44,13 @@ class todo_item {
      * @param[in] size_y - the size of the screen in Y direction
      * @return the amount of rows printed
      */
-    int print(int row, int col, int size_x, int size_y);
+    void set_pos(td_screen_pos_t top);
+    virtual int print(WINDOW * win);
+
+    static std::string state2string(uint8_t state);
 
     static void sort_mode(uint8_t mode);
     static uint8_t get_sort_mode() { return SORT_BY; }
-
-    static std::string state2string(uint8_t state);
 
     static void set_mid(uint32_t mid) { MID = mid; }
     static uint32_t get_mid() { return MID; }
@@ -96,6 +92,8 @@ class todo_item {
     bool m_sel;
     int  m_top_row;
     int  m_bottom_row;
+
+    td_screen_pos_t m_top;
 
   public:
     td_utils::todo_multiline_edit m_text_edit;

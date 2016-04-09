@@ -1,72 +1,46 @@
 #include "td-item.h"
+
 #include "td-gui.h"
+#include "td-except.h"
+
 #include <ncurses.h>
 
 uint32_t todo_item::MID = 0;
 uint8_t  todo_item::SORT_BY = ID;
 
-void __callback_triggered(void * params[]) {
-  if(!params) return;
-  if(!params[0]) return;
-  todo_item * item = static_cast<todo_item*>(params[0]);
-  std::string text = item->m_text_edit.get_text();
-  item->set_comment(text);
-}
+class item_submit_exception : public td_utils::todo_exception {
+  public:
+    virtual bool handle(td_utils::todo_widget * handler) {
+      todo_item * item = dynamic_cast<todo_item*>(handler);
+      td_utils::todo_edit * edit = dynamic_cast<td_utils::todo_edit*>(m_notifier);
+      item->set_comment(edit->get_text());
+      item->set_focus(NULL);
+      return true;
+    }
+};
 
-todo_item::todo_item()
-         : m_ID(++MID), m_text_edit() {
+todo_item::todo_item(td_utils::todo_widget * parent)
+         : td_utils::todo_widget(parent), m_ID(++MID), m_text_edit(this) {
   m_text_edit.visible(false);
-  td_callback_wrapper_t * cbwrapper = new td_callback_wrapper_t;
-  cbwrapper->params = new void*[1];
-  cbwrapper->params[0] = this;
-  cbwrapper->param_count = 1;
-  cbwrapper->callback_wrapper = &__callback_triggered;
-  m_text_edit.set_callback(cbwrapper, TD_EDIT_TRIGGERED_CB);
 }
-todo_item::todo_item(std::string name,
-                     std::string comment,
-                     uint8_t priority,
-                     uint8_t state)
-         : m_ID(++MID), m_name(name), m_comment(comment),
+todo_item::todo_item(td_utils::todo_widget * parent, std::string name,
+                     std::string comment, uint8_t priority, uint8_t state)
+         : td_utils::todo_widget(parent), m_ID(++MID), m_name(name), m_comment(comment),
            m_priority(priority), m_state(state), m_exp(false),
            m_sel(false), m_top_row(0), m_bottom_row(0),
-           m_text_edit() {
+           m_text_edit(this) {
   m_text_edit.visible(false);
-  td_callback_wrapper_t * cbwrapper = new td_callback_wrapper_t;
-  cbwrapper->params = new void*[1];
-  cbwrapper->params[0] = this;
-  cbwrapper->param_count = 1;
-  cbwrapper->callback_wrapper = &__callback_triggered;
-  m_text_edit.set_callback(cbwrapper, TD_EDIT_TRIGGERED_CB);
 }
 
 todo_item::todo_item(const todo_item & item)
-         : m_ID(item.m_ID), m_name(item.m_name), m_comment(item.m_comment),
+         : todo_widget(item.m_parent), m_ID(item.m_ID), m_name(item.m_name), m_comment(item.m_comment),
            m_priority(item.m_priority), m_state(item.m_state), m_exp(item.m_exp),
            m_sel(item.m_sel), m_top_row(item.m_top_row), m_bottom_row(item.m_bottom_row),
-           m_text_edit(item.m_text_edit) {
-  td_callback_wrapper_t * cbwrapper = new td_callback_wrapper_t;
-  cbwrapper->params = new void*[1];
-  cbwrapper->params[0] = this;
-  cbwrapper->param_count = 1;
-  cbwrapper->callback_wrapper = &__callback_triggered;
-  m_text_edit.set_callback(cbwrapper, TD_EDIT_TRIGGERED_CB);
+           m_text_edit(this) {
 }
 
 todo_item::~todo_item() {
   //nothing todo
-}
-
-void todo_item::make(std::string name,
-                     std::string comment,
-                     uint8_t priority,
-                     uint8_t state) {
-  m_name = name;
-  m_comment = comment;
-  m_priority = priority;
-  m_state = state;
-  m_text_edit.visible(false);
-  m_text_edit.set_text(m_comment);
 }
 
 bool todo_item::operator<(const todo_item& it) const {
@@ -84,53 +58,66 @@ bool todo_item::operator<(const todo_item& it) const {
   return false;
 }
 
+int todo_item::callback(int input) {
+  try {
+    m_text_edit.callback(input);
+  } catch(td_utils::todo_exception * except) {
+    except->handle(this);
+  }
+  return 0;
+}
+
 #define PRINT_OFFSET_BACK 19 //TODO dynamic?
 #define PRINT_OFFSET_EXP   9
 #define PRINT_OFFSET_CMB   3
 
-int todo_item::print(int row, int col, int size_x,
-    int size_y __attribute__ ((unused)) ) {
-  int draw_pos = 0;
-  m_top_row = row;
+void todo_item::set_pos(td_screen_pos_t top) {
+  m_top = top;
+}
+
+int todo_item::print(WINDOW * win) {
+  int draw_pos = 0, size_x, tmp, row, col;
+
+  row = m_top.scr_y;
+  col = m_top.scr_x;
+  getmaxyx(win, tmp, size_x);
 
   if(m_sel) //print selected item bold
-    attron(A_BOLD);
+    wattron(win, A_BOLD);
 
   //print #ID Name
-  mvprintw(row++, col, "%s#%04X %n[%c] %s",
+  mvwprintw(win, row++, col, "%s#%04X %n[%c] %s",
       (m_sel ? "->" : "  "), m_ID, &draw_pos, (m_exp ? '-' : '+'), m_name.c_str());
 
-  mvchgat(row-1, 2, 5, (m_sel ? A_BOLD : A_NORMAL), 4, NULL);
-  mvchgat(row-1, draw_pos, 3, (m_sel ? A_BOLD : A_NORMAL),
+  mvwchgat(win, row-1, 2, 5, (m_sel ? A_BOLD : A_NORMAL), 4, NULL);
+  mvwchgat(win, row-1, draw_pos, 3, (m_sel ? A_BOLD : A_NORMAL),
       (m_exp ? 2 : 3), NULL); //highlight expand box
 
   //print priority state
-  mvprintw(row-1, (size_x - col) - PRINT_OFFSET_BACK, " ( %04d )   [%s]",
+  mvwprintw(win, row-1, (size_x - col) - PRINT_OFFSET_BACK, " ( %04d )   [%s]",
       m_priority, state2string(m_state).c_str());
 
   const unsigned int st_color[4] = { 2, 2, 4, 3 };
-  mvchgat(row-1, (size_x - col- 7), 6, (m_sel ? A_BOLD : A_NORMAL), 4, NULL);
-  mvchgat(row-1, (size_x - col- 6), 4, (m_sel ? A_BOLD : A_NORMAL),
+  mvwchgat(win, row-1, (size_x - col- 7), 6, (m_sel ? A_BOLD : A_NORMAL), 4, NULL);
+  mvwchgat(win, row-1, (size_x - col- 6), 4, (m_sel ? A_BOLD : A_NORMAL),
       st_color[m_state], NULL);
 
 
   if(m_sel) //disabled bold
-    attroff(A_BOLD);
+    wattroff(win, A_BOLD);
 
   if(m_exp) { //print expanded
-    mvprintw(row++, col+PRINT_OFFSET_EXP, "| Description:");
-    mvprintw(row, col+PRINT_OFFSET_EXP, "-> ");
+    mvwprintw(win, row++, col+PRINT_OFFSET_EXP, "| Description:");
+    mvwprintw(win, row, col+PRINT_OFFSET_EXP, "-> ");
     td_screen_pos_t pos = { col + PRINT_OFFSET_EXP + PRINT_OFFSET_CMB, row };
     td_screen_pos_t end = { size_x - PRINT_OFFSET_BACK - 3, row };
     m_text_edit.set_pos(pos);
     m_text_edit.set_end(end);
     m_text_edit.set_text(m_comment);
-    int rows = m_text_edit.print();
+    int rows = m_text_edit.print(win);
     row += rows;
-    m_bottom_row = ++row;
     return 2 + rows;
   }
-  m_bottom_row = row;
   return 1; //used one row
 }
 
@@ -147,7 +134,7 @@ void todo_item::sort_mode(uint8_t mode) {
 }
 
 std::string todo_item::state2string(uint8_t state) {
-  switch(state) { //TODO add color code
+  switch(state) {
     default:
     case todo_item::INVALID_STATE:
       return "----";

@@ -217,7 +217,7 @@ error_free:
       return -1;
     const char * item_name = (const char *)params[0];
     todo_list * list = (todo_list *)params[1];
-    todo_item new_item(item_name, "(empty)");
+    todo_item new_item(list, item_name, "(empty)");
     list->add_item(new_item);
     return 0;
   }

@@ -9,8 +9,9 @@ namespace td_utils {
   /**
    * @brief constructor, creates new todo text edit
    */
-  todo_edit_base::todo_edit_base()
-           : m_visible(true), m_text(), m_cursor_pos(0), m_callbacks() {
+  todo_edit_base::todo_edit_base(todo_widget * parent)
+           : todo_widget(parent), m_visible(true), m_text(),
+             m_cursor_pos(0), m_callbacks() {
     m_pos.scr_x = 0;
     m_pos.scr_y = 0;
     m_end.scr_x = 0;
@@ -18,8 +19,8 @@ namespace td_utils {
   }
 
   todo_edit_base::todo_edit_base(const todo_edit_base & edit)
-           : m_visible(edit.m_visible), m_pos(edit.m_pos),
-             m_end(edit.m_end), m_text(edit.m_text),
+           : todo_widget(edit.m_parent), m_visible(edit.m_visible),
+             m_pos(edit.m_pos), m_end(edit.m_end), m_text(edit.m_text),
              m_cursor_pos(edit.m_cursor_pos), m_callbacks() {
   }
 
@@ -27,10 +28,8 @@ namespace td_utils {
    * @brief destructor
    */
   todo_edit_base::~todo_edit_base() {
-    std::map<int, td_callback_wrapper_t*>::iterator it;
+    std::map<int, todo_exception*>::iterator it;
     for(it = m_callbacks.begin(); it != m_callbacks.end(); it++) {
-      if(it->second)
-        delete [] it->second->params;
       delete it->second;
     }
   }
@@ -40,7 +39,7 @@ namespace td_utils {
    * @param[in] cbwrapper - callback wrapper to trigger on input
    * @param[in] input     - the input to trigger callback
    */
-  void todo_edit_base::callback(int input) {
+  int todo_edit_base::callback(int input) {
     switch(input) {
       case CMDK_ARROW_LEFT:
         if(m_cursor_pos > 1)
@@ -56,6 +55,9 @@ namespace td_utils {
       case CMDK_BACKSPACE:
         del_char(false);
         break;
+      case CMDK_ESCAPE:
+        return_focus();
+        break;
       default:
         if(is_valid(input))
           add_char(input & 0xFF);
@@ -64,20 +66,22 @@ namespace td_utils {
 
     // trigger callback if set
     if(m_callbacks[input])
-      m_callbacks[input]->callback_wrapper(m_callbacks[input]->params);
-    if(m_callbacks[TD_EDIT_TRIGGERED_CB])
-      m_callbacks[TD_EDIT_TRIGGERED_CB]->callback_wrapper(m_callbacks[TD_EDIT_TRIGGERED_CB]->params);
+      throw m_callbacks[input];
+    else if(m_callbacks[CMDK_TRIGGERED])
+      throw m_callbacks[CMDK_TRIGGERED];
+    return 0;
   }
 
   /**
    * @brief sets callback for given input
-   * @param[in] cbwrapper - callback wrapper to be triggered on input, takes ownership
+
    * @param[in] input     - the input to trigger callback
    */
-  void todo_edit_base::set_callback(td_callback_wrapper_t * cbwrapper, int input) {
-    if(!cbwrapper) return;
-    if(!cbwrapper->callback_wrapper) return;
-    m_callbacks[input] = cbwrapper;
+  void todo_edit_base::set_callback(todo_exception * except, int input) {
+    if(!except) return;
+    if(m_callbacks[input])
+      delete m_callbacks[input];
+    m_callbacks[input] = except;
   }
 
   //< clears edit
@@ -88,7 +92,7 @@ namespace td_utils {
 
   //< checks wether input is a valid character
   bool todo_edit_base::is_valid(int input) {
-    return (input >= TD_EDIT_VALID_CHAR_START && input <= TD_EDIT_VALID_CHAR_END);
+    return (input >= CMDK_VALID_START && input <= CMDK_VALID_END);
   }
 
   /**
@@ -118,8 +122,8 @@ namespace td_utils {
     }
   }
 
-  todo_edit::todo_edit(std::string prefix)
-           : todo_edit_base(), m_prefix(prefix),
+  todo_edit::todo_edit(todo_widget * parent, std::string prefix)
+           : todo_edit_base(parent), m_prefix(prefix),
              m_history(), m_history_ptr(m_history.begin()) {
   }
 
@@ -128,46 +132,45 @@ namespace td_utils {
              m_history(edit.m_history), m_history_ptr(m_history.begin()) {
   }
 
-  void todo_edit::callback(int input) {
-    switch(input) {
-      case CMDK_ARROW_UP:
-        if(m_history_ptr != m_history.begin())
-          m_history_ptr--;
-        m_text = *m_history_ptr;
-        m_cursor_pos = m_text.length();
-        break;
-      case CMDK_ARROW_DOWN:
-        if(m_history_ptr == m_history.end() ||
-            m_history_ptr == --m_history.end()) {
+  int todo_edit::callback(int input) {
+    if(todo_widget::callback(input) == 0) {
+      switch(input) {
+        case CMDK_ARROW_UP:
+          if(m_history_ptr != m_history.begin())
+            m_history_ptr--;
+          m_text = *m_history_ptr;
+          m_cursor_pos = m_text.length();
+          break;
+        case CMDK_ARROW_DOWN:
+          if(m_history_ptr == m_history.end() ||
+              m_history_ptr == --m_history.end()) {
+            m_history_ptr = m_history.end();
+            m_text = "";
+          }
+          else
+            m_text = *(++m_history_ptr);
+          m_cursor_pos = m_text.length();
+          break;
+        case CMDK_ENTER:
+          m_history.push_back(m_text);
           m_history_ptr = m_history.end();
-          m_text = "";
-        }
-        else
-          m_text = *(++m_history_ptr);
-        m_cursor_pos = m_text.length();
-        break;
-      case CMDK_ENTER:
-        m_history.push_back(m_text);
-        m_history_ptr = m_history.end();
-        break;
-      case CMDK_DELETE:
-      case CMDK_BACKSPACE:
-        m_history_ptr = m_history.end();
-        break;
-      default:
-        if(is_valid(input)) {
+          break;
+        case CMDK_DELETE:
+        case CMDK_BACKSPACE:
           m_history_ptr = m_history.end();
-        }
-        break;
+          break;
+        default:
+          if(is_valid(input)) {
+            m_history_ptr = m_history.end();
+          }
+          break;
+      }
+      todo_edit_base::callback(input);
     }
-    todo_edit_base::callback(input);
-
-    //TODO print update should be done by callback
-    // update screen
-    print();
+    return 0;
   }
 
-  int todo_edit::print() const {
+  int todo_edit::print(WINDOW * win) {
     // do not need to do anything if not visible
     if(!m_visible) return 0;
 
@@ -180,34 +183,40 @@ namespace td_utils {
       ((int)actual_cursor_pos - size_x) : 0;
 
     // clear line TODO check for better way!
-    move(m_pos.scr_y, m_pos.scr_x);
+    wmove(win, m_pos.scr_y, m_pos.scr_x);
     for(int l = 0; l < size_x; l++)
-      addch(' ');
+      waddch(win, ' ');
 
-    mvaddnstr(m_pos.scr_y, m_pos.scr_x, str.c_str() + start_pos, size_x);
+    mvwaddnstr(win, m_pos.scr_y, m_pos.scr_x, str.c_str() + start_pos, size_x);
     str = m_prefix + m_text.substr(0, m_cursor_pos);
-    mvaddnstr(m_pos.scr_y, m_pos.scr_x, str.c_str() + start_pos, size_x);
+    mvwaddnstr(win, m_pos.scr_y, m_pos.scr_x, str.c_str() + start_pos, size_x);
     row_count = 1;
-    refresh();
     curs_set(1);
     return row_count;
   }
 
-  void todo_multiline_edit::callback(int input) {
-    switch(input) {
-      case CMDK_ARROW_UP:
-        if((int)m_cursor_pos - (m_end.scr_x - m_pos.scr_x) > 0)
-          m_cursor_pos -= (m_end.scr_x - m_pos.scr_x - 1) ;
-        break;
-      case CMDK_ARROW_DOWN:
-        if((int)m_cursor_pos + (m_end.scr_x - m_pos.scr_x) < (int)m_text.length())
-          m_cursor_pos += (m_end.scr_x - m_pos.scr_x - 1);
-        break;
-    }
-    todo_edit_base::callback(input);
+  todo_multiline_edit::todo_multiline_edit(todo_widget * parent)
+                     : todo_edit_base(parent) {
   }
 
-  int todo_multiline_edit::print() const {
+  int todo_multiline_edit::callback(int input) {
+    if(todo_widget::callback(input) == 0) {
+      switch(input) {
+        case CMDK_ARROW_UP:
+          if((int)m_cursor_pos - (m_end.scr_x - m_pos.scr_x) > 0)
+            m_cursor_pos -= (m_end.scr_x - m_pos.scr_x - 1) ;
+          break;
+        case CMDK_ARROW_DOWN:
+          if((int)m_cursor_pos + (m_end.scr_x - m_pos.scr_x) < (int)m_text.length())
+            m_cursor_pos += (m_end.scr_x - m_pos.scr_x - 1);
+          break;
+      }
+      todo_edit_base::callback(input);
+    }
+    return 0;
+  }
+
+  int todo_multiline_edit::print(WINDOW * win) {
     // do not need to do anything if not visible
     if(!m_visible) return 0;
 
@@ -217,12 +226,11 @@ namespace td_utils {
 
     row_count = str.length() / size_x + 1;
     for(int l = 0; l < row_count; l++)
-      mvaddnstr(m_pos.scr_y + l, m_pos.scr_x, str.c_str() + (l * size_x), size_x);
+      mvwaddnstr(win, m_pos.scr_y + l, m_pos.scr_x, str.c_str() + (l * size_x), size_x);
     unsigned int cursor_row_pos = m_cursor_pos / size_x;
     unsigned int cursor_col_pos = m_cursor_pos % size_x;
-    mvaddnstr(m_pos.scr_y + cursor_row_pos, m_pos.scr_x,
+    mvwaddnstr(win, m_pos.scr_y + cursor_row_pos, m_pos.scr_x,
         str.c_str() + (cursor_row_pos * size_x), cursor_col_pos);
-    refresh();
     curs_set(1);
     return row_count;
   }

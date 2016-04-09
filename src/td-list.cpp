@@ -36,11 +36,12 @@ typedef struct {
 const std::string todo_list::default_filename = ".list.td";
 std::string todo_list::current_file = "";
 
-todo_list::todo_list() : std::list<todo_item>(), m_sel(end()) {
+todo_list::todo_list(todo_widget * parent)
+         : todo_frame(parent), std::list<todo_item>(), m_sel(end()) {
 }
 
-todo_list::todo_list(const std::string & file_name)
-          : std::list<todo_item>(), m_sel(end()) {
+todo_list::todo_list(todo_widget * parent, const std::string & file_name)
+          : todo_frame(parent), std::list<todo_item>(), m_sel(end()) {
   load(file_name);
 }
 
@@ -93,16 +94,34 @@ void todo_list::undo_remove() {
   }
 }
 
-int todo_list::print(int row, int col, int size_x, int size_y) {
-  std::list<todo_item>::iterator it;
-  for(it = begin(); it != end(); it++) {
-    row = row + it->print(row, col, size_x, size_y);
-    //if(row >= size_y) //only print until end of screen
-    //  break;
+int todo_list::callback(int input) {
+  if(todo_widget::callback(input) == 0) {
+    switch(input) {
+      case CMDK_ARROW_UP:
+        select_prev();
+        break;
+      case CMDK_ARROW_DOWN:
+        select_next();
+        break;
+      case CMDK_ENTER:
+        expand_selected();
+        break;
+      case CMDK_EDIT:
+        set_focus(get_selection());
+        break;
+    }
   }
-  return row;
 }
 
+int todo_list::print(WINDOW * win) {
+  std::list<todo_item>::iterator it;
+  td_screen_pos_t top = { 0, 1 };
+  for(it = begin(); it != end(); it++) {
+    it->set_pos(top);
+    top.scr_y += it->print(m_win);
+  }
+  return todo_frame::print(win);
+}
 
 uint8_t todo_list::load(const std::string & file_name) {
   td_list_file_header l_fheader;
@@ -132,7 +151,7 @@ uint8_t todo_list::load(const std::string & file_name) {
     file.read(comment, i_fheader.__desc_len);
     name[i_fheader.__name_len] = 0;
     comment[i_fheader.__desc_len] = 0;
-    todo_item item(name, comment, i_fheader.__prio, i_fheader.__state);
+    todo_item item(this, name, comment, i_fheader.__prio, i_fheader.__state);
     item.set_id(i_fheader.__id);
     add_item(item);
     delete [] name;

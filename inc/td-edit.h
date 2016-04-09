@@ -5,20 +5,18 @@
 #include <list>
 #include <map>
 
+#include "td-widget.h"
+#include "td-except.h"
 #include "td-defs.h"
 
 namespace td_utils {
 
-#define TD_EDIT_VALID_CHAR_START 0x20
-#define TD_EDIT_VALID_CHAR_END   0x7E
-#define TD_EDIT_TRIGGERED_CB     0xFF
-
-  class todo_edit_base {
+  class todo_edit_base : public todo_widget {
     public:
       /**
        * @brief constructor, creates new todo text edit
        */
-      todo_edit_base();
+      todo_edit_base(todo_widget * parent);
 
       /**
        * @brief copy constructor, creates new todo text edit
@@ -35,17 +33,17 @@ namespace td_utils {
        * @brief callback if new input has occurred
        * @param[in] input - new user input
        */
-      virtual void callback(int input);
+      virtual int callback(int input);
 
       /**
        * @brief sets callback for given input
-       * @param[in] cbwrapper - callback wrapper to trigger on input, takes owner ship
+
        * @param[in] input     - the input to trigger callback
        */
-      void set_callback(td_callback_wrapper_t * cbwrapper, int input);
+      void set_callback(todo_exception * except, int input);
 
       //< if edit is visible prints edit to screen
-      virtual int print() const = 0;
+      virtual int print(WINDOW * win) = 0;
 
       //< clears edit
       void clear();
@@ -94,7 +92,7 @@ namespace td_utils {
       td_screen_pos_t m_end;
       std::string m_text;
       unsigned int m_cursor_pos;
-      std::map<int, td_callback_wrapper_t*> m_callbacks;
+      std::map<int, todo_exception*> m_callbacks;
   };
 
   class todo_edit : public todo_edit_base {
@@ -103,7 +101,7 @@ namespace td_utils {
        * @brief constructor, creates new todo text edit (single line)
        * @param[in] prefix - prefix that shall be added to text
        */
-      todo_edit(std::string prefix = "");
+      todo_edit(todo_widget * parent, std::string prefix = "");
 
       /**
        * @brief copy constructor, creates new todo text edit
@@ -115,10 +113,10 @@ namespace td_utils {
        * @brief callback if new input has occurred
        * @param[in] input - new user input
        */
-      virtual void callback(int input);
+      virtual int callback(int input);
 
       //< if edit is visible prints edit to screen
-      virtual int print() const;
+      virtual int print(WINDOW * win);
 
     private:
       todo_edit operator=(const todo_edit&);
@@ -131,14 +129,16 @@ namespace td_utils {
 
   class todo_multiline_edit : public todo_edit_base {
     public:
+      todo_multiline_edit(todo_widget * parent);
+
       /**
        * @brief callback if new input has occurred
        * @param[in] input - new user input
        */
-      virtual void callback(int input);
+      virtual int callback(int input);
 
       //< if edit is visible prints edit to screen
-      virtual int print() const;
+      virtual int print(WINDOW * win);
     private:
       todo_multiline_edit operator=(const todo_multiline_edit&);
   };

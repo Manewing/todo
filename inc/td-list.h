@@ -3,9 +3,10 @@
 
 #include <list>
 
+#include "td-frame.h"
 #include "td-item.h"
 
-class todo_list : public std::list<todo_item> {
+class todo_list : public std::list<todo_item>, public td_utils::todo_frame {
   public:
     static const std::string default_filename; //< default filename
     static std::string current_file;           //< path to current file
@@ -13,8 +14,8 @@ class todo_list : public std::list<todo_item> {
     /**
      * @brief constructor
      */
-    todo_list();
-    todo_list(const std::string &file_name);
+    todo_list(todo_widget * parent);
+    todo_list(todo_widget * parent, const std::string &file_name);
 
     ~todo_list();
 
@@ -26,6 +27,9 @@ class todo_list : public std::list<todo_item> {
     void remove_item(todo_item *item);
     void undo_remove();
 
+
+    virtual int callback(int input);
+
     /**
      * @brief prints todo list to screen
      * @param[in] row    - the row to start printing
@@ -34,7 +38,7 @@ class todo_list : public std::list<todo_item> {
      * @param[in] size_y - the size of the screen in Y direction
      * @return the last row printed to
      */
-    int print(int row, int col, int size_x, int size_y);
+    virtual int print(WINDOW * win = stdscr);
 
     uint8_t load(const std::string &file_name);
     uint8_t save(const std::string &file_name);

@@ -3,50 +3,94 @@
 #include "td-defs.h"
 #include "td-except.h"
 
-namespace td_utils {
+#include <iostream>
 
-  class todo_widget_focus_update : public todo_exception {
+//debug TODO remove
+#include <sstream>
+
+namespace todo {
+
+  class widget_focus_update : public su_exception {
     public:
-      todo_widget_focus_update(todo_widget * notifier = NULL)
-        : todo_exception(notifier) {}
-      virtual bool handle(todo_widget * handler) {
-        handler->set_focus(NULL);
-        return false;
+      widget_focus_update(widget * notifier = NULL)
+        : su_exception(notifier) {}
+      virtual void process(widget * handler) {
+        widget::log_debug("focus update", " -");
+        handler->set_focus(handler);
       }
   };
 
-  todo_widget::todo_widget(todo_widget * parent)
-             : m_parent(parent), m_focus(NULL) {
-  }
 
-  todo_widget::~todo_widget() {
-  }
+  static unsigned int access_counter = 0;
+  std::ofstream widget::log_file;
 
-  int todo_widget::callback(int input) {
-    if(m_focus) {
-      try {
-        m_focus->callback(input);
-        return 1;
-      } catch(todo_exception * except) {
-        if(except->handle(this) == false)
-          delete except;
-        if(m_focus == NULL) // focus has changed
-          return 1;
-      }
+  widget::widget() : m_focus(this) {
+    if(access_counter++ == 0) {
+      log_file.open(
+        #ifdef TD_DEBUG
+          "td.log",
+       #else
+          ".td.log", // TODO
+       #endif
+          std::ios_base::out);
     }
-    return 0;
   }
 
-  void todo_widget::set_focus(todo_widget * widget) {
-    m_focus = widget;
+  widget::~widget() {
+    if(--access_counter == 0) {
+      log_file.close();
+    }
   }
 
-  todo_widget * todo_widget::get_focus() {
+  void widget::set_focus(widget * w) {
+    m_focus = (w == NULL ? this : w);
+  }
+
+  widget * widget::get_focus() {
     return m_focus;
   }
 
-  void todo_widget::return_focus() {
-    throw new todo_widget_focus_update();
+  void widget::return_focus() {
+    throw new widget_focus_update();
   }
 
-}; // namespace td_utils
+  void widget::call_focus(int input) {
+#ifdef TD_DEBUG
+    std::stringstream ss;
+    ss << "widget[" << this << "] (0x" << std::hex << input << ")";
+    widget::log_debug(ss.str(), "to m_focus->callback");
+#endif
+    try {
+      m_focus->callback(input);
+    } catch(exception * except) {
+      except->handle(this);
+    }
+  }
+
+  void widget::callback(int input) {
+    if(m_focus == this) {
+#ifdef TD_DEBUG
+      std::stringstream ss;
+      ss << "widget[" << this << "] (0x" << std::hex << input << ")";
+      widget::log_debug(ss.str(), "callback -> to callback_handler");
+#endif
+      this->callback_handler(input);
+    } else {
+      call_focus(input);
+    }
+  }
+
+  void widget::log(std::string type, std::string id, std::string msg) {
+    widget::log_file << "[" << type << "]" << "(" << id << "): "
+                     << msg << std::endl;
+  }
+
+  void widget::log_error(std::string id, std::string msg) {
+    widget::log("ERROR", id, msg);
+  }
+
+  void widget::log_debug(std::string id, std::string msg) {
+    widget::log("DEBUG", id, msg);
+  }
+
+}; // namespace todo

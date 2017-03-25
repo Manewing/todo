@@ -103,8 +103,8 @@ namespace td_utils {
    * @param[in/out] gui     - pointer to the todo gui
    * @param[in/out] list    - pointer to the todo list
    */
-  void execute_cmdline(const std::string & cmdline, todo_gui * gui,
-      todo_list * list) {
+  void execute_cmdline(const std::string & cmdline, todo::gui * gui,
+      todo::list * list) {
     if(cmdline.length() == 0)
       return;
     const char * delim = " \n.:,;";
@@ -163,7 +163,7 @@ error_free:
       return -1;
     if(!params[0])
       return -1;
-    todo_gui * gui = (todo_gui*)params[0];
+    todo::gui * gui = (todo::gui*)params[0];
     gui->print_msg_u("HERE SHOULD BE THE HELP SCREEN");
     return 0;
   }
@@ -174,9 +174,9 @@ error_free:
     if(!(params[1] && params[2]))
       return -1;
     const char * filename = (params[0] == NULL) ?
-      todo_list::current_file.c_str() : static_cast<const char*>(params[0]);
-    todo_gui * gui = static_cast<todo_gui*>(params[1]);
-    todo_list * list = static_cast<todo_list*>(params[2]);
+      todo::list::current_file.c_str() : static_cast<const char*>(params[0]);
+    todo::gui * gui = static_cast<todo::gui*>(params[1]);
+    todo::list * list = static_cast<todo::list*>(params[2]);
     std::string message;
     if(list->save(filename) == 0)
       message = "Saved to file: ";
@@ -193,15 +193,15 @@ error_free:
     if(!(params[0] && params[1]))
       return -1;
     const char * mode = (const char *)params[0];
-    todo_list * list = (todo_list*)params[1];
+    todo::list * list = (todo::list*)params[1];
     if(strcmp(mode, "id") == 0)
-      todo_item::sort_mode(todo_item::ID);
+      todo::item::sort_mode(todo::item::ID);
     else if(strcmp(mode, "state") == 0 || strcmp(mode, "st") == 0)
-      todo_item::sort_mode(todo_item::STATE);
+      todo::item::sort_mode(todo::item::STATE);
     else if(strcmp(mode, "priority") == 0 || strcmp(mode, "pr") == 0)
-      todo_item::sort_mode(todo_item::PRIORITY);
+      todo::item::sort_mode(todo::item::PRIORITY);
     else if(strcmp(mode, "name") == 0 || strcmp(mode, "nm") == 0)
-      todo_item::sort_mode(todo_item::NAME);
+      todo::item::sort_mode(todo::item::NAME);
     list->sort();
     return 0;
   }
@@ -216,8 +216,8 @@ error_free:
     if(!(params[0] && params[1]))
       return -1;
     const char * item_name = (const char *)params[0];
-    todo_list * list = (todo_list *)params[1];
-    todo_item new_item(list, item_name, "(empty)");
+    todo::list * list = (todo::list *)params[1];
+    todo::item new_item(item_name, "(empty)");
     list->add_item(new_item);
     return 0;
   }
@@ -225,7 +225,7 @@ error_free:
   int cmdline_q(void * params[]) {
     if(!params || !params[0])
       return -1;
-    todo_gui * gui = static_cast<todo_gui*>(params[0]);
+    todo::gui * gui = static_cast<todo::gui*>(params[0]);
     gui->quit();
     return 0;
   }

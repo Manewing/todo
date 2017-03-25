@@ -6,7 +6,6 @@
 
 namespace td_utils {
 
-
   /**
    * @brief todo shortcut
    */
@@ -15,7 +14,7 @@ namespace td_utils {
     unsigned int shc_size;   //< size of shortcut list
     unsigned int shc_index;  //< current index in list
     //< function to exectute when shortcut is triggered
-    int (*execute)(todo_gui * gui, todo_list * list, int input);
+    int (*execute)(todo::gui * gui, todo::list * list, int input);
   } todo_shc;
 
   /**
@@ -24,7 +23,7 @@ namespace td_utils {
    * @param[in/out] gui   - pointer to todo gui
    * @param[in/out] list  - pointer to todo list
    */
-  void shortcut_update(int input, todo_gui * gui, todo_list * list);
+  void shortcut_update(int input, todo::gui * gui, todo::list * list);
 
 }; // namespace td_utils
 

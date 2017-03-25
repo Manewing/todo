@@ -6,29 +6,30 @@
 
 #include <list>
 
-namespace td_utils {
+namespace todo {
 
-  class todo_frame : public todo_widget {
+  class frame : public widget {
     public:
-      todo_frame(todo_widget * parent,
-                 WINDOW * topwin = stdscr);
-      virtual ~todo_frame();
+      frame();
+      virtual ~frame();
 
       //bottom -1, -1 => auto scale
       virtual void set_pos(WINDOW * topwin, td_screen_pos_t top, td_screen_pos_t bottom);
 
       virtual int print(WINDOW * win);
 
+      WINDOW * get_win();
+
     private:
-      todo_frame(const todo_frame&);
-      void operator = (const todo_frame&);
+      frame(const frame&);
+      void operator = (const frame&);
 
     protected:
       WINDOW * m_win;
       td_screen_pos_t m_top;
       td_screen_pos_t m_bottom;
 
-  }; // class todo_frame
-}; // namespace td_utils
+  }; // class frame
+}; // namespace todo
 
 #endif

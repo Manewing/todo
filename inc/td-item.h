@@ -5,99 +5,106 @@
 #include <iostream>
 #include <string>
 #include <ncurses.h>
+
+#include "td-widget.h"
 #include "td-edit.h"
 
+namespace todo {
 
-class todo_item : public td_utils::todo_widget {
+  class item : public widget {
 
-  public:
-    typedef enum { INVALID_STATE, TODO, WORK_IN_PRG, DONE } TD_STATE;
+    public:
+      typedef enum { INVALID_STATE, TODO, WORK_IN_PRG, DONE } TD_STATE;
 
-    typedef enum { INVALID_PR, LOW, NORMAL, HIGH } TD_PRIORITY;
+      typedef enum { INVALID_PR, LOW, NORMAL, HIGH } TD_PRIORITY;
 
-    typedef enum { ID, STATE, PRIORITY, NAME } SB_TYPE;
+      typedef enum { ID, STATE, PRIORITY, NAME } SB_TYPE;
 
-  public:
-    /**
-     * @brief constructor
-     */
-    todo_item(todo_widget * parent);
+    public:
+      /**
+       * @brief constructor
+       */
+      item();
 
-    todo_item(todo_widget * parent,
-              std::string name,
-              std::string comment,
-              uint8_t priority = NORMAL,
-              uint8_t state = TODO);
-    todo_item(const todo_item & item);
-    virtual ~todo_item();
+      item(std::string name,
+           std::string comment,
+           uint8_t priority = NORMAL,
+           uint8_t state = TODO);
 
-    bool operator < (const todo_item& it) const;
-    bool operator == (const todo_item& it) const { return m_ID == it.m_ID; }
+      item(const item & item);
+      virtual ~item();
 
-    virtual int callback(int input);
+      bool operator < (const item& it) const;
+      bool operator == (const item& it) const;
 
-    /**
-     * @brief prints item
-     * @param[in] row    - the row to start printing the item
-     * @param[in] col    - the column to start printing the item
-     * @param[in] size_x - the size of the screen in X direction
-     * @param[in] size_y - the size of the screen in Y direction
-     * @return the amount of rows printed
-     */
-    void set_pos(td_screen_pos_t top);
-    virtual int print(WINDOW * win);
+      virtual void callback(int input);
 
-    static std::string state2string(uint8_t state);
+      void set_update(exception * e);
 
-    static void sort_mode(uint8_t mode);
-    static uint8_t get_sort_mode() { return SORT_BY; }
+      /**
+       * @brief prints item
+       * @param[in] row    - the row to start printing the item
+       * @param[in] col    - the column to start printing the item
+       * @param[in] size_x - the size of the screen in X direction
+       * @param[in] size_y - the size of the screen in Y direction
+       * @return the amount of rows printed
+       */
+      void set_pos(td_screen_pos_t top);
+      virtual int print(WINDOW * win);
 
-    static void set_mid(uint32_t mid) { MID = mid; }
-    static uint32_t get_mid() { return MID; }
+      static std::string state2string(uint8_t state);
 
-    void set_id(uint32_t id) { m_ID = id; }
-    uint32_t get_id() const { return m_ID; }
+      static void sort_mode(uint8_t mode);
+      static uint8_t get_sort_mode() { return SORT_BY; }
 
-    void set_name(std::string name) { m_name = name; }
-    std::string get_name() const { return m_name; }
+      static void set_mid(uint32_t mid) { MID = mid; }
+      static uint32_t get_mid() { return MID; }
 
-    void set_comment(std::string comment) { m_comment = comment; }
-    std::string get_comment() const { return m_comment; }
+      void set_id(uint32_t id) { m_ID = id; }
+      uint32_t get_id() const { return m_ID; }
 
-    void set_priority(uint8_t priority) { m_priority = priority; }
-    uint8_t get_priority() const { return m_priority; }
+      void set_name(std::string name) { m_name = name; }
+      std::string get_name() const { return m_name; }
 
-    void set_state(uint8_t state) { m_state = state; }
-    uint8_t get_state() const { return m_state; }
+      void set_comment(std::string comment) { m_comment = comment; }
+      std::string get_comment() const { return m_comment; }
 
-    void set_expanded(bool expanded);
-    bool is_expanded() const { return m_exp; }
+      void set_priority(uint8_t priority) { m_priority = priority; }
+      uint8_t get_priority() const { return m_priority; }
 
-    void set_selected(bool selected);
-    bool is_selected() const { return m_sel; }
+      void set_state(uint8_t state) { m_state = state; }
+      uint8_t get_state() const { return m_state; }
 
-    int get_top_row() const { return m_top_row; }
-    int get_bottom_row() const { return m_bottom_row; }
+      void set_expanded(bool expanded);
+      bool is_expanded() const { return m_exp; }
 
-  protected:
-    static uint32_t MID;        ///< max ID
-    static uint8_t SORT_BY;     ///< sets sort mode
+      void set_selected(bool selected);
+      bool is_selected() const { return m_sel; }
 
-    uint32_t m_ID;              ///< ID of this object
-    std::string m_name;         ///< name
-    std::string m_comment;      ///< comment
-    uint8_t m_priority;         ///< priority
-    uint8_t m_state;            ///< state
-    bool m_exp;                 ///< true if expanded
-    bool m_sel;
-    int  m_top_row;
-    int  m_bottom_row;
+      int get_top_row() const { return m_top_row; }
+      int get_bottom_row() const { return m_bottom_row; }
 
-    td_screen_pos_t m_top;
+    protected:
+      static uint32_t MID;        ///< max ID
+      static uint8_t SORT_BY;     ///< sets sort mode
 
-  public:
-    td_utils::todo_multiline_edit m_text_edit;
+      uint32_t m_ID;              ///< ID of this object
+      std::string m_name;         ///< name
+      std::string m_comment;      ///< comment
+      uint8_t m_priority;         ///< priority
+      uint8_t m_state;            ///< state
+      bool m_exp;                 ///< true if expanded
+      bool m_sel;
+      int  m_top_row;
+      int  m_bottom_row;
 
-};
+      td_screen_pos_t m_top;
+
+    public:
+      multiline_edit m_text_edit;
+
+  };
+
+}; // namespace todo
 
 #endif

@@ -7,10 +7,10 @@
 namespace td_utils {
 
 //< macro to define a undo function
-#define UNDO_FUNCTION(name) int undo_function_ ## name (todo_gui * gui, todo_list * list)
+#define UNDO_FUNCTION(name) int undo_function_ ## name (todo::gui * gui, todo::list * list)
 
   //< typedef of undo function
-  typedef int (*undo_function)(todo_gui * gui, todo_list * list);
+  typedef int (*undo_function)(todo::gui * gui, todo::list * list);
 
   //< list of undo function from exectued commands
   extern std::list<undo_function> g_executed;
@@ -33,9 +33,9 @@ namespace td_utils {
    * @param[in/out] gui     - pointer to the todo gui
    * @param[in/out] list    - pointer to the todo list
    */
-  void execute_cmdline(const std::string & cmdline, todo_gui * gui,
-      todo_list * list);
+  void execute_cmdline(const std::string & cmdline, todo::gui * gui,
+      todo::list * list);
 
-}; // namespace td_utils
+}; // namespace todo
 
 #endif // #ifndef TODO_CMD_HH

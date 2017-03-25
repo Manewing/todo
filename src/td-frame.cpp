@@ -1,18 +1,19 @@
 #include "td-frame.h"
 
-namespace td_utils {
+namespace todo {
 
-  todo_frame::todo_frame(todo_widget * parent,
-                         WINDOW * topwin)
-            : todo_widget(parent), m_win(NULL) {
-    m_win = derwin(topwin, 24, 80, 0, 0);
+  frame::frame():
+    widget(),
+    m_win(NULL)
+  {
+    m_win = newwin(24, 80, 0, 0);
   }
 
-  todo_frame::~todo_frame() {
+  frame::~frame() {
     delwin(m_win);
   }
 
-  void todo_frame::set_pos(WINDOW * topwin, td_screen_pos_t top, td_screen_pos_t bottom) {
+  void frame::set_pos(WINDOW * topwin, td_screen_pos_t top, td_screen_pos_t bottom) {
     int tmp;
     m_top = top;
     m_bottom = bottom;
@@ -24,14 +25,18 @@ namespace td_utils {
     }
     wresize(m_win, m_bottom.scr_y-m_top.scr_y, m_bottom.scr_x-m_top.scr_x);
     mvwin(m_win, m_top.scr_y, m_top.scr_x);
-    refresh();
+    wrefresh(m_win);
   }
 
-  int todo_frame::print(WINDOW * win) {
+  int frame::print(WINDOW * win) {
     (void)win;
     wborder(m_win, '|', '|', '-', '-', '+', '+', '+', '+');
     wrefresh(m_win);
     return m_bottom.scr_y - m_top.scr_y;
   }
 
-}; // namespace td_utils
+  WINDOW * frame::get_win() {
+    return m_win;
+  }
+
+}; // namespace todo

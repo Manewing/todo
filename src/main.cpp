@@ -23,26 +23,22 @@ int main(int argc, char * argv[]) {
     std::cerr << "error: could not get home directory" << std::endl;
     return -1;
   }
-  path = get_path(homedir, todo_list::default_filename.c_str());
+  path = get_path(homedir, todo::list::default_filename.c_str());
   if(!path) {
-    std::cerr << "error: could not get path to file: " << todo_list::default_filename
+    std::cerr << "error: could not get path to file: " << todo::list::default_filename
               << " in " << homedir << std::endl;
     return -1;
   }
   if(!file_exists(path)) {
     std::cerr << "file: " << path << " does not exist, TODO create new" << std::endl;
-    todo_list::current_file = path;
+    todo::list::current_file = path;
   }
 
 
-  //TODO make static function for ncurses init
-  initscr();
-  raw();
-  keypad(stdscr, true);
-  noecho();
-  set_escdelay(0);
 
-  td_utils::todo_gui gui;
+  todo::gui::init();
+
+  todo::gui gui;
 
   gui.m_list.load(path);
   gui.update();
@@ -52,13 +48,13 @@ int main(int argc, char * argv[]) {
     input = getch();
     gui.callback(input);
    /* switch(gui.get_focus()) {
-      case td_utils::todo_gui::NO_FOCUS:
+      case td_utils::todo::gui::NO_FOCUS:
         switch(input) {
           case CMDK_ENTER:
             gui.expand_item();
             break;
           case CMDK_START_CMD: // ':'
-            gui.set_focus(td_utils::todo_gui::CMD_LINE_FOCUS);
+            gui.set_focus(td_utils::todo::gui::CMD_LINE_FOCUS);
             gui.m_cmdline_edit.visible(true);
             gui.m_cmdline_edit.print();
             //gui.start_cmdline();
@@ -67,7 +63,7 @@ int main(int argc, char * argv[]) {
             gui.quit();
             break;
           case CMDK_EDIT: // 'e'
-            gui.set_focus(td_utils::todo_gui::ITEM_FOCUS);
+            gui.set_focus(td_utils::todo::gui::ITEM_FOCUS);
             if(list.get_selection()) {
               if(!list.get_selection()->is_expanded())
                 gui.expand_item();
@@ -85,10 +81,10 @@ int main(int argc, char * argv[]) {
             break;
         }
         break;
-      case td_utils::todo_gui::ITEM_FOCUS:
+      case td_utils::todo::gui::ITEM_FOCUS:
         switch(input) {
           case CMDK_ESCAPE:
-            gui.set_focus(td_utils::todo_gui::NO_FOCUS);
+            gui.set_focus(td_utils::todo::gui::NO_FOCUS);
             gui.update();
             break;
           default:
@@ -98,12 +94,12 @@ int main(int argc, char * argv[]) {
             break;
         }
         break;
-      case td_utils::todo_gui::CMD_LINE_FOCUS:
+      case td_utils::todo::gui::CMD_LINE_FOCUS:
         switch(input) {
           case CMDK_ESCAPE:
             gui.m_cmdline_edit.visible(false);
             gui.m_cmdline_edit.clear();
-            gui.set_focus(td_utils::todo_gui::NO_FOCUS);
+            gui.set_focus(td_utils::todo::gui::NO_FOCUS);
             break;
           default:
             gui.m_cmdline_edit.callback(input);
@@ -111,7 +107,7 @@ int main(int argc, char * argv[]) {
         }
         break;
       default:
-        gui.set_focus(td_utils::todo_gui::NO_FOCUS);
+        gui.set_focus(td_utils::todo::gui::NO_FOCUS);
         break;
     }*/
   }

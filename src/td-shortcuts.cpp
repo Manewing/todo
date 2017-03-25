@@ -10,7 +10,7 @@ namespace td_utils {
 #define FORWARD_INPUT 0xFF
 
 //< macors to define shortcut and shortcut function
-#define SHORTCUT_FUNC(name) int exec_shortcut_ ## name (todo_gui * gui, todo_list * list, int input)
+#define SHORTCUT_FUNC(name) int exec_shortcut_ ## name (todo::gui * gui, todo::list * list, int input)
 #define SHORTCUT(name, list, size) {(int[])list, size, 0, &exec_shortcut_ ## name }
 
   SHORTCUT_FUNC(undo);
@@ -37,7 +37,7 @@ namespace td_utils {
    * @param[in/out] gui   - pointer to todo gui
    * @param[in/out] list  - pointer to todo list
    */
-  void shortcut_update(int input, todo_gui * gui, todo_list * list) {
+  void shortcut_update(int input, todo::gui * gui, todo::list * list) {
     assert(gui && list);
     for(unsigned int l = 0; l < shortcut_count; l++) {
       if(shortcuts[l].shc_list[shortcuts[l].shc_index] == input ||
@@ -56,10 +56,10 @@ namespace td_utils {
     }
   }
 
-  int exec_shortcut_del(todo_gui * gui,
-      todo_list * list, int input __attribute__((unused)) ) {
+  int exec_shortcut_del(todo::gui * gui,
+      todo::list * list, int input __attribute__((unused)) ) {
     assert(gui && list);
-    todo_item * item = list->get_selection();
+    todo::item * item = list->get_selection();
     if(item) {
       list->remove_item(list->get_selection());
       g_executed.push_back(&undo_function_del);
@@ -71,7 +71,7 @@ namespace td_utils {
     return 0;
   }
 
-  int undo_function_del(todo_gui * gui, todo_list * list) {
+  int undo_function_del(todo::gui * gui, todo::list * list) {
     assert(gui && list);
     list->undo_remove();
     gui->update();
@@ -79,8 +79,8 @@ namespace td_utils {
     return 0;
   }
 
-  int exec_shortcut_undo(todo_gui * gui,
-      todo_list * list, int input __attribute__((unused)) ) {
+  int exec_shortcut_undo(todo::gui * gui,
+      todo::list * list, int input __attribute__((unused)) ) {
     assert(gui && list);
     if(g_executed.empty()) {
       gui->print_msg("Can not undo more...");
@@ -99,20 +99,20 @@ namespace td_utils {
     return 0;
   }
 
-  int exec_shortcut_set_item(todo_gui * gui, todo_list * list, int input) {
+  int exec_shortcut_set_item(todo::gui * gui, todo::list * list, int input) {
     assert(gui && list);
-    todo_item * item = list->get_selection();
+    todo::item * item = list->get_selection();
     switch(input) {
       case 0x64: //'d'
-        item->set_state(todo_item::DONE);
+        item->set_state(todo::item::DONE);
         gui->print_msg_u("Set item to DONE");
         break;
       case 0x74: //'t'
-        item->set_state(todo_item::TODO);
+        item->set_state(todo::item::TODO);
         gui->print_msg_u("Set item to TODO");
         break;
       case 0x77: //'w'
-        item->set_state(todo_item::WORK_IN_PRG);
+        item->set_state(todo::item::WORK_IN_PRG);
         gui->print_msg_u("Set item to WORK IN PROGRESS");
         break;
       default:

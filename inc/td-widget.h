@@ -3,28 +3,39 @@
 
 #include <ncurses.h>
 #include <list>
+#include <fstream>
 
-namespace td_utils {
+namespace todo {
 
-  class todo_widget {
+  class widget {
     public:
-      todo_widget(todo_widget * parent);
-      virtual ~todo_widget();
+      widget();
+      virtual ~widget();
 
-      virtual int callback(int input);
+      virtual void callback_handler(int input) {};
 
       virtual int print(WINDOW * win) = 0;
 
-      virtual void set_focus(todo_widget * widget);
-      virtual todo_widget * get_focus();
+      virtual void set_focus(widget * widget);
+      virtual widget * get_focus();
       virtual void return_focus();
+      virtual void call_focus(int input);
 
+      //TODO private
+      virtual void callback(int input);
+
+      //TODO change logging system
+      static void log(std::string type, std::string id, std::string msg);
+      static void log_error(std::string id, std::string msg);
+      static void log_debug(std::string id, std::string msg);
+
+    private:
+      static std::ofstream log_file;
     protected:
-      todo_widget * m_parent; //TODO remove
-      todo_widget * m_focus;
+      widget * m_focus;
 
-  }; // class todo_widget
+  }; // class widget
 
-}; // namespace td_utils
+}; // namespace todo
 
 #endif // #ifndef TODO_WIDGET

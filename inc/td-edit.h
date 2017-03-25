@@ -7,40 +7,42 @@
 
 #include "td-widget.h"
 #include "td-except.h"
+#include "td-update.h"
 #include "td-defs.h"
 
-namespace td_utils {
+namespace todo {
 
-  class todo_edit_base : public todo_widget {
+  class edit_base : public widget,
+                    public update_if {
     public:
       /**
        * @brief constructor, creates new todo text edit
        */
-      todo_edit_base(todo_widget * parent);
+      edit_base();
 
       /**
        * @brief copy constructor, creates new todo text edit
        * @param[in] edit - edit to copy
        */
-      todo_edit_base(const todo_edit_base&);
+      edit_base(const edit_base&);
 
       /**
        * @brief destructor
        */
-      virtual ~todo_edit_base();
+      virtual ~edit_base();
 
       /**
-       * @brief callback if new input has occurred
+       * @brief callback handler if new input has occurred
        * @param[in] input - new user input
        */
-      virtual int callback(int input);
+      virtual void callback_handler(int input);
 
       /**
        * @brief sets callback for given input
 
        * @param[in] input     - the input to trigger callback
        */
-      void set_callback(todo_exception * except, int input);
+      void set_callback(exception * except, int input);
 
       //< if edit is visible prints edit to screen
       virtual int print(WINDOW * win) = 0;
@@ -49,7 +51,7 @@ namespace td_utils {
       void clear();
 
       //< sets text of edit
-      void set_text(std::string text) { m_text = text; m_cursor_pos = m_text.length(); }
+      void set_text(std::string text);
       //< get text of edit
       std::string get_text() { return m_text; }
 
@@ -92,34 +94,34 @@ namespace td_utils {
       td_screen_pos_t m_end;
       std::string m_text;
       unsigned int m_cursor_pos;
-      std::map<int, todo_exception*> m_callbacks;
+      std::map<int, exception*> m_callbacks;
   };
 
-  class todo_edit : public todo_edit_base {
+  class edit : public edit_base {
     public:
       /**
        * @brief constructor, creates new todo text edit (single line)
        * @param[in] prefix - prefix that shall be added to text
        */
-      todo_edit(todo_widget * parent, std::string prefix = "");
+      edit(std::string prefix = "");
 
       /**
        * @brief copy constructor, creates new todo text edit
        * @param[in] edit - edit to copy
        */
-      todo_edit(const todo_edit & edit);
+      edit(const edit & edit);
 
       /**
-       * @brief callback if new input has occurred
+       * @brief callback handler if new input has occurred
        * @param[in] input - new user input
        */
-      virtual int callback(int input);
+      virtual void callback_handler(int input);
 
       //< if edit is visible prints edit to screen
       virtual int print(WINDOW * win);
 
     private:
-      todo_edit operator=(const todo_edit&);
+      edit operator=(const edit&);
 
     protected:
       std::string m_prefix;
@@ -127,22 +129,23 @@ namespace td_utils {
       std::list<std::string>::iterator m_history_ptr;
   };
 
-  class todo_multiline_edit : public todo_edit_base {
+  class multiline_edit : public edit_base {
     public:
-      todo_multiline_edit(todo_widget * parent);
+      multiline_edit();
+      multiline_edit(const multiline_edit&);
 
       /**
        * @brief callback if new input has occurred
        * @param[in] input - new user input
        */
-      virtual int callback(int input);
+      virtual void callback_handler(int input);
 
       //< if edit is visible prints edit to screen
       virtual int print(WINDOW * win);
     private:
-      todo_multiline_edit operator=(const todo_multiline_edit&);
+      multiline_edit operator=(const multiline_edit&);
   };
 
-}; // namespace td_utils
+}; // namespace todo
 
 #endif // #ifndef TODO_GUI_EDIT_HH

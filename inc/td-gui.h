@@ -8,9 +8,9 @@
 
 #include "td-edit.h"
 
-namespace td_utils {
+namespace todo {
 
-  class todo_gui : public todo_widget {
+  class gui : public widget, public update_if {
     public:
       enum { NO_FOCUS, ITEM_FOCUS, CMD_LINE_FOCUS };
     public:
@@ -18,14 +18,15 @@ namespace td_utils {
        * @brief constructor
        * @param[in/out] list - reference to todo list
        */
-      todo_gui();
+      gui();
 
       /**
        * @brief destructor
        */
-      virtual ~todo_gui();
+      virtual ~gui();
 
-      virtual int callback(int input);
+      virtual void callback_handler(int input);
+      virtual void return_focus();
 
       /**
        * @brief updates gui
@@ -33,23 +34,22 @@ namespace td_utils {
       virtual void update();
 
 
+      void print_header(WINDOW * win = stdscr);
       virtual int print(WINDOW * win = stdscr);
 
 
-      /*void scroll_down();
-      void scroll_up();
-      void expand_item();*/
       void print_msg(std::string msg);
       void print_msg_u(std::string msg) { m_msg_u = msg; }
 
-      std::string get_cmdline();
       void quit();
       bool is_running();
 
+      static void init();
+
     private:
       /* disabled */
-      todo_gui(const todo_gui&);
-      todo_gui operator=(const todo_gui&);
+      gui(const gui&);
+      gui operator=(const gui&);
 
     protected:
       bool         m_quit;        //< true if to quit
@@ -57,12 +57,10 @@ namespace td_utils {
       std::string  m_msg_u;
 
     public:
-      int m_row;
-      int m_col;
-      todo_list    m_list;        //< reference to the actual todo list data
-      todo_edit    m_cmdline_edit;
+      list    m_list;        //< reference to the actual todo list data
+      edit    m_cmdline_edit;
   };
 
-}; // namespace td_utils
+}; // namespace todo
 
 #endif // #ifndef TODO_GUI_HH

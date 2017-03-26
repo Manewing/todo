@@ -39,8 +39,7 @@ namespace todo {
 
   /**
    * @brief callback handler for given input
-   * @param[in] cbwrapper - callback wrapper to trigger on input
-   * @param[in] input     - the input to trigger callback
+   * @param[in] input - the input to trigger callback
    */
   void edit_base::callback_handler(int input) {
 #ifdef TD_DEBUG
@@ -65,6 +64,7 @@ namespace todo {
         del_char(false);
         break;
       case CMDK_ESCAPE:
+        widget::log_debug("edit_base", "return_focus");
         return_focus();
         break;
       default:
@@ -83,7 +83,7 @@ namespace todo {
 
   /**
    * @brief sets callback for given input
-   * @param[in] input     - the input to trigger callback
+   * @param[in] input - the input to trigger callback
    */
   void edit_base::set_callback(exception * except, int input) {
     if(!except) return;

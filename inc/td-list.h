@@ -2,72 +2,64 @@
 #define TODO_LIST_HH
 
 #include <list>
+#include <string>
 
-#include "td-frame.h"
 #include "td-item.h"
-#include "td-update.h"
+#include "td-frame.h"
+
 
 namespace todo {
-  class list : public std::list<item>,
-               public frame,
-               public update_if {
+
+  class list : public frame {
     public:
-      static const std::string default_filename; //< default filename
-      static std::string current_file;           //< path to current file
+      typedef std::list<item*>                list_t;
+      typedef typename list_t::iterator       iterator;
+      typedef typename list_t::const_iterator const_iterator;
+
+      static std::string       current_file;
+      static std::string const default_filename;
+
     public:
-      /**
-       * @brief constructor
-       */
       list();
-      list(const std::string &file_name);
+      list(std::string const& file_name);
+
+      list(list const&) = delete;
+      list& operator = (list const&) = delete;
 
       virtual ~list();
 
-      /**
-       * @brief add a todo item to the list
-       * @param[in] item - pointer to the item, todo-list takes ownership
-       */
-      void add_item(item item);
-      void remove_item(item *item);
+      inline iterator begin() { return m_list.begin(); }
+      inline iterator end() { return m_list.end(); }
+      inline const_iterator begin() const { return m_list.begin(); }
+      inline const_iterator end() const { return m_list.end(); }
+
+      void sort();
+
+      void add_item(item* i);
+      void remove_item(item* i);
       void undo_remove();
 
-      virtual void callback_handler(int input);
+      void select_next();
+      void select_prev();
+      void expand_selected(bool force = false); //TODO misleading function name
+      item* get_selection();
 
-      /**
-       * @brief prints todo list to screen
-       * @param[in] row    - the row to start printing
-       * @param[in] column - the column to start printing
-       * @param[in] size_x - the size of the screen in X direction
-       * @param[in] size_y - the size of the screen in Y direction
-       * @return the last row printed to
-       */
-      void print_items();
-      virtual int print(WINDOW * win = stdscr);
+      virtual int print(WINDOW* win = stdscr);
 
-      uint8_t load(const std::string &file_name);
-      uint8_t save(const std::string &file_name);
-
-      int select_next();
-      int select_prev();
-      void expand_selected();
-      item * get_selection();
+      bool load(std::string const& file_name);
+      bool save(std::string const& file_name);
 
     private:
-      /**
-        * @brief disabled copy constructor
-        */
-      list(const list&);
+      void update_scroll();
 
-      /**
-        * @brief disabled assignment operator
-        */
-      void operator = (const list&);
+    private:
+      list_t    m_list;
+      iterator  m_sel;
+      list_t    m_removed_items;
 
-    protected:
-      std::list<item>::iterator m_sel;
-      std::list<item> m_removed_items;
+      int       m_scroll;
   };
 
-}; // namespace todo
+};
 
-#endif
+#endif // #ifndef TODO_LIST_HH

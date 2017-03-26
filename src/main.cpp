@@ -39,8 +39,7 @@ int main(int argc, char * argv[]) {
   todo::gui::init();
 
   todo::gui gui;
-
-  gui.m_list.load(path);
+  gui.lst().load(path);
   gui.update();
 
 

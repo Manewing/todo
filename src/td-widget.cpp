@@ -15,7 +15,9 @@ namespace todo {
       widget_focus_update(widget * notifier = NULL)
         : su_exception(notifier) {}
       virtual void process(widget * handler) {
-        widget::log_debug("focus update", " -");
+        std::stringstream ss;
+        ss << "handler: " << handler;
+        widget::static_log_debug("focus update", ss.str());
         handler->set_focus(handler);
       }
   };
@@ -57,8 +59,8 @@ namespace todo {
   void widget::call_focus(int input) {
 #ifdef TD_DEBUG
     std::stringstream ss;
-    ss << "widget[" << this << "] (0x" << std::hex << input << ")";
-    widget::log_debug(ss.str(), "to m_focus->callback");
+    ss << "to m_focus->callback(" << std::hex << input << ")";
+    widget::log_debug("widget", ss.str());
 #endif
     try {
       m_focus->callback(input);
@@ -71,8 +73,8 @@ namespace todo {
     if(m_focus == this) {
 #ifdef TD_DEBUG
       std::stringstream ss;
-      ss << "widget[" << this << "] (0x" << std::hex << input << ")";
-      widget::log_debug(ss.str(), "callback -> to callback_handler");
+      ss << "callback -> callback_handler(" << input << ")";
+      widget::log_debug("widget", ss.str());
 #endif
       this->callback_handler(input);
     } else {
@@ -81,7 +83,7 @@ namespace todo {
   }
 
   void widget::log(std::string type, std::string id, std::string msg) {
-    widget::log_file << "[" << type << "]" << "(" << id << "): "
+    widget::log_file << "[" << type << "]" << "(" << id << "=" << this << "): "
                      << msg << std::endl;
   }
 
@@ -91,6 +93,19 @@ namespace todo {
 
   void widget::log_debug(std::string id, std::string msg) {
     widget::log("DEBUG", id, msg);
+  }
+
+  void widget::static_log(std::string type, std::string id, std::string msg) {
+    widget::log_file << "[" << type << "]" << "(" << id << "): "
+                     << msg << std::endl;
+  }
+
+  void widget::static_log_error(std::string id, std::string msg) {
+    widget::static_log("ERROR", id, msg);
+  }
+
+  void widget::static_log_debug(std::string id, std::string msg) {
+    widget::static_log("DEBUG", id, msg);
   }
 
 }; // namespace todo

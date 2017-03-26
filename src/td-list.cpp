@@ -1,158 +1,196 @@
 #include "td-list.h"
 
 #include <string.h>
+#include <sstream>
 #include <fstream>
-
-#define MAX_LENGTH 512 //TODO into td-item
+#include <algorithm>
 
 #define TD_LIST_TAG 0xB0
-
-typedef struct {
-  uint8_t __tag;
-  uint32_t __item_count;
-  uint8_t __sort_mode;
-  uint32_t __mid;
-  uint8_t __reserved[22];
-} __attribute__ ((packed)) td_list_file_header;
 
 #define TD_LIST_FILE_HEADER_INITIALIZER \
   { TD_LIST_TAG, 0, item::ID, item::get_mid(), {0} }
 
 #define TD_ITEM_TAG 0x13
 
-typedef struct {
-  uint8_t __tag;
-  uint8_t __prio;
-  uint8_t __state;
-  uint8_t __name_len;
-  uint16_t __desc_len;
-  uint32_t __id;
-  uint8_t __reserved[22];
-} __attribute__ ((packed)) td_item_file_header;
-
 #define TD_ITEM_FILE_HEADER_INITIALIZER \
   { TD_ITEM_TAG, item::NORMAL, item::TODO, 0, 0, 0, {0} }
 
+namespace {
+
+  typedef struct {
+    uint8_t __tag;
+    uint32_t __item_count;
+    uint8_t __sort_mode;
+    uint32_t __mid;
+    uint8_t __reserved[22];
+  } __attribute__ ((packed)) td_list_file_header;
+
+  typedef struct {
+    uint8_t __tag;
+    uint8_t __prio;
+    uint8_t __state;
+    uint8_t __name_len;
+    uint16_t __desc_len;
+    uint32_t __id;
+    uint8_t __reserved[22];
+  } __attribute__ ((packed)) td_item_file_header;
+
+};
+
+
 namespace todo {
 
-  const std::string list::default_filename = ".list.td";
   std::string list::current_file = "";
+  std::string const list::default_filename = ".list.td";
 
-  class list_update_exception : public exception {
-    public:
-      list_update_exception(widget * notifier)
-        : exception(notifier) {}
-      virtual void process(widget * handler) {
-        list * l = dynamic_cast<list*>(handler);
-        //m_notifier->print(list->get_win());
-        handler->print(stdscr);
-      }
-  };
+  list::list():
+    frame(),
+    m_list(),
+    m_sel(m_list.end()),
+    m_removed_items(),
+    m_scroll(0) {
 
-  list::list()
-      : frame(), std::list<item>(), m_sel(end()) {
-    set_update(new urecall_exception(this));
+    /* nothing todo */
+
   }
 
-  list::list(const std::string & file_name)
-      : frame(), std::list<item>(), m_sel(end()) {
+  list::list(std::string const& file_name):
+    frame(),
+    m_list(),
+    m_sel(m_list.end()),
+    m_removed_items(),
+    m_scroll(0) {
+
     load(file_name);
-    set_update(new urecall_exception(this));
+
   }
 
   list::~list() {
+    // cleanup
+    for (auto it : m_list)
+      delete it;
   }
 
-  void list::add_item(item item) {
+  void list::sort() {
+
+    // sort items in list depending on item sorting mode
+    m_list.sort(
+      [](item* i1, item* i2) {
+        return *i1 < *i2;
+      }
+    );
+
+  }
+
+  void list::add_item(item* i) {
     // if list is not empty deselect current item
-    if(m_sel != end())
-      m_sel->set_selected(false);
+    if (m_sel != end())
+      (*m_sel)->set_selected(false);
+
     // add new item and sort list again
-    push_back(item);
-    sort();
-    // set selection iterator to last entry of list
+    m_list.push_back(i);
     m_sel = --end();
-    m_sel->set_selected(true);
+    (*m_sel)->set_selected(true);
+
+    // sort list
+    sort();
   }
 
-  void list::remove_item(todo::item * item) {
+  void list::remove_item(item * i) {
+
     // check if item was selected item
-    if(*m_sel == *item) {
-      std::list<todo::item>::iterator it = m_sel;
-      if(++it != end()) { // not the last item?
+    if (*m_sel == i) {
+      iterator it = m_sel;
+      if (++it != end()) { // not the last item?
         m_sel = it;
-        m_sel->set_selected(true);
-      }
-      else if(m_sel != begin()) { // not the first item?
+        (*m_sel)->set_selected(true);
+      } else if (m_sel != begin()) { // not the first item?
         --m_sel;
-        m_sel->set_selected(true);
-      }
-      else // the only item
+        (*m_sel)->set_selected(true);
+      } else // the only item
         m_sel = end();
     }
-    m_removed_items.push_back(*item);
-    remove(*item);
+
+    m_removed_items.push_back(i);
+    m_list.remove(i);
+
+    // re-sort list
     sort();
   }
 
   void list::undo_remove() {
+    // remove to undo?
     if(m_removed_items.empty())
       return;
-    item item = m_removed_items.back();
-    item.set_selected(false);
+
+    item* i = m_removed_items.back();
+    i->set_selected(false);
     m_removed_items.pop_back();
-    push_back(item);
+    m_list.push_back(i);
     sort();
+
     if(m_sel == end()) {
       m_sel = begin();
-      m_sel->set_selected(true);
+      (*m_sel)->set_selected(true);
     }
   }
 
-  void list::callback_handler(int input) {
-    widget::log_debug("list", "in callback_handler");
-    switch(input) {
-      /*case CMDK_ARROW_UP:
-        select_prev();
-        break;
-      case CMDK_ARROW_DOWN:
-        select_next();
-        break;
-      case CMDK_ENTER:
-        expand_selected();
-        break; */
-      case CMDK_EDIT:
-        widget::log_debug("list", "Edit...");
-        set_focus(get_selection());
-        if(m_sel == end())
-          m_sel->set_expanded(true);
-        break;
-    }
-    update();
+  void list::select_next() {
+    // item selected?
+    if (m_sel == end())
+      return;
+
+    (*m_sel)->set_selected(false);
+    if(++m_sel == end())
+      m_sel = --end();
+    (*m_sel)->set_selected(true);
+
+    update_scroll();
   }
 
-  void list::print_items() {
-    std::list<item>::iterator it;
-    td_screen_pos_t top = { 0, 1 };
-    for(it = begin(); it != end(); it++) {
-      it->set_pos(top);
-      top.scr_y += it->print(m_win);
-    }
+  void list::select_prev() {
+    if(m_sel == end())
+      return;
+
+    (*m_sel)->set_selected(false);
+    if(m_sel != begin())
+      m_sel--;
+    (*m_sel)->set_selected(true);
+
+    update_scroll();
   }
 
-  int list::print(WINDOW * win) {
+  void list::expand_selected(bool force) {
+    if(m_sel == end())
+      return;
+    (*m_sel)->set_expanded(force ? true : !(*m_sel)->is_expanded());
+  }
+
+  item * list::get_selection() {
+    if(m_sel == end())
+      return NULL;
+    return *m_sel;
+  }
+
+  int list::print(WINDOW* win) {
     wclear(m_win);
-    print_items();
+
+    int top = 1 + m_scroll;
+    for (auto it : m_list) {
+      it->set_pos(top);
+      top += it->print(m_win);
+    }
+
     return frame::print(win);
   }
 
-  uint8_t list::load(const std::string & file_name) {
+  bool list::load(const std::string & file_name) {
     td_list_file_header l_fheader;
     td_item_file_header i_fheader;
     std::ifstream file;
 
     file.open(file_name.c_str(), std::ios::binary | std::ios::in);
-    if(!file) return -1;
+    if(!file) return false;
 
     // get char pointer of list header and read it in directly
     file.read((char*)(&l_fheader), sizeof(td_list_file_header));
@@ -169,14 +207,18 @@ namespace todo {
       // allocate memory for name and comment
       char * name = new char[i_fheader.__name_len+1];
       char * comment = new char[i_fheader.__desc_len+1];
+
       // read in name and comment
       file.read(name, i_fheader.__name_len);
       file.read(comment, i_fheader.__desc_len);
       name[i_fheader.__name_len] = 0;
       comment[i_fheader.__desc_len] = 0;
-      todo::item item(name, comment, i_fheader.__prio, i_fheader.__state);
-      item.set_id(i_fheader.__id);
-      add_item(item);
+
+      // create item and add item
+      item* i = new item(name, comment, i_fheader.__prio, i_fheader.__state);
+      i->set_id(i_fheader.__id);
+      add_item(i);
+
       delete [] name;
       delete [] comment;
     }
@@ -186,27 +228,26 @@ namespace todo {
 
     file.close();
     list::current_file = file_name;
-    return 0;
+    return true;
   }
 
-  uint8_t list::save(const std::string & file_name) {
+  bool list::save(const std::string & file_name) {
     td_list_file_header l_fheader = TD_LIST_FILE_HEADER_INITIALIZER;
     td_item_file_header i_fheader = TD_ITEM_FILE_HEADER_INITIALIZER;
     std::ofstream file;
 
     file.open(file_name.c_str(), std::ios::binary | std::ios::out);
-    if(!file) return -1;
+    if(!file) return false;
 
     // set data in header to write
-    l_fheader.__item_count = size();
+    l_fheader.__item_count = m_list.size();
     l_fheader.__sort_mode = item::get_sort_mode();
     l_fheader.__mid = item::get_mid();
 
     // write header data to file
     file.write((const char*)(&l_fheader), sizeof(td_list_file_header));
 
-    std::list<item>::const_iterator it;
-    for(it = begin(); it != end(); it++) {
+    for (auto it : m_list) {
       i_fheader.__prio = it->get_priority();
       i_fheader.__state = it->get_state();
       i_fheader.__name_len = it->get_name().size();
@@ -217,41 +258,18 @@ namespace todo {
       file.write(it->get_comment().c_str(), i_fheader.__desc_len);
     }
     file.close();
-    return 0;
+    return true;
   }
 
-  int list::select_next() {
-    if(m_sel != end())
-      m_sel->set_selected(false);
-    else
-      return 0;
-    if(++m_sel == end())
-      m_sel = --end();
-    m_sel->set_selected(true);
-    return m_sel->get_bottom_row();
-  }
+  void list::update_scroll() {
+    const int top_row = (*m_sel)->get_top_row();
+    const int bottom_row = (*m_sel)->get_bottom_row() + 1;
+    const int rows = m_bottom.scr_y - m_top.scr_y;
 
-  int list::select_prev() {
-    if(m_sel != end())
-      m_sel->set_selected(false);
-    else
-      return 0;
-    if(m_sel != begin())
-      m_sel--;
-    m_sel->set_selected(true);
-    return m_sel->get_top_row();
-  }
-
-  void list::expand_selected() {
-    if(m_sel == end())
-      return;
-    m_sel->set_expanded(!m_sel->is_expanded());
-  }
-
-  item * list::get_selection() {
-    if(m_sel == end())
-      return NULL;
-    return &(*m_sel);
+    if (top_row < 1)
+      m_scroll -= top_row - 1;
+    else if (bottom_row >= rows)
+      m_scroll -= bottom_row - rows;
   }
 
 }; // namespace todo

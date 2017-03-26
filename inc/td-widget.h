@@ -25,9 +25,13 @@ namespace todo {
       virtual void callback(int input);
 
       //TODO change logging system
-      static void log(std::string type, std::string id, std::string msg);
-      static void log_error(std::string id, std::string msg);
-      static void log_debug(std::string id, std::string msg);
+      void log(std::string type, std::string id, std::string msg);
+      void log_error(std::string id, std::string msg);
+      void log_debug(std::string id, std::string msg);
+
+      static void static_log(std::string type, std::string id, std::string msg);
+      static void static_log_error(std::string id, std::string msg);
+      static void static_log_debug(std::string id, std::string msg);
 
     private:
       static std::ofstream log_file;

@@ -12,7 +12,7 @@ class gui_edit_submit_exception : public todo::exception {
       // get gui and edit
       todo::gui * gui = dynamic_cast<todo::gui*>(handler);
       todo::edit * edit = dynamic_cast<todo::edit*>(m_notifier);
-      td_utils::execute_cmdline(edit->get_text(), gui, &gui->m_list);
+      td_utils::execute_cmdline(edit->get_text(), gui, &gui->lst());
       // edit has done its job hide it again
       edit->clear();
       edit->print(stdscr);
@@ -28,17 +28,20 @@ class gui_update_exception : public todo::exception {
     gui_update_exception(todo::widget * notifier)
       : todo::exception(notifier) {}
     virtual void process(todo::widget * handler) {
-      todo::widget::log_debug("gui_update_exception", "print");
+      todo::widget::static_log_debug("gui_update_exception", "print");
       m_notifier->print(stdscr);
     }
 };
 
 namespace todo {
 
-  gui::gui()
-     : widget(), m_quit(false), m_scroll(0),
-       m_list(), m_msg_u(),
-       m_cmdline_edit(":") {
+  gui::gui():
+    widget(),
+    m_list(),
+    m_quit(false),
+    m_msg_u(),
+    m_cmdline_edit(":") {
+
     //init colors
     start_color();
     use_default_colors(); //use terminal colors
@@ -55,9 +58,6 @@ namespace todo {
     m_cmdline_edit.set_callback(new gui_edit_submit_exception(&m_cmdline_edit), CMDK_ENTER);
     m_cmdline_edit.set_callback(new gui_update_exception(&m_cmdline_edit), CMDK_TRIGGERED);
     m_cmdline_edit.visible(false);
-
-    //XXX DEBUG XXX
-    m_list.set_update(new gui_update_exception(&m_list));
 
     //update
     update();
@@ -78,40 +78,24 @@ namespace todo {
       case CMDK_EXIT:
         quit();
         break;
-        /* TODO */
       case CMDK_ARROW_UP:
         m_list.select_prev();
-        try {
-          m_list.update();
-        } catch(exception * except) {
-          except->handle(this);
-        }
         break;
       case CMDK_ARROW_DOWN:
         m_list.select_next();
-        try {
-          m_list.update();
-        } catch(exception * except) {
-          except->handle(this);
-        }
         break;
       case CMDK_ENTER:
         m_list.expand_selected();
-        try {
-          m_list.update();
-        } catch(exception * except) {
-          except->handle(this);
-        }
         break;
-        /* TODO */
+      case CMDK_EDIT:
+        m_list.expand_selected(true);
+        set_focus(m_list.get_selection());
       default:
         td_utils::shortcut_update(input, this, &m_list);
         break;
-      case CMDK_EDIT:
-        set_focus(&m_list);
-        call_focus(input);
-        break;
     }
+
+    update();
   }
 
   void gui::return_focus() {
@@ -156,21 +140,7 @@ namespace todo {
     return 0;
   }
 
-  /*void gui::scroll_down() {
-    int bottom_row = m_list.select_next();
-    if(bottom_row + 1 + BOTTOM_OFFSET >= m_row)
-      m_scroll -= (bottom_row + 1 + BOTTOM_OFFSET) - m_row;
-    update();
-  }
-
-  void gui::scroll_up() {
-    int top_row = m_list.select_prev();
-    if(top_row < HEADER_OFFSET)
-      m_scroll += HEADER_OFFSET - top_row;
-    update();
-  }
-
-  void gui::expand_item() {
+  /*void gui::expand_item() {
     m_list.expand_selected();
     item * item = m_list.get_selection();
     update();

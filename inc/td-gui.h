@@ -14,15 +14,7 @@ namespace todo {
     public:
       enum { NO_FOCUS, ITEM_FOCUS, CMD_LINE_FOCUS };
     public:
-      /**
-       * @brief constructor
-       * @param[in/out] list - reference to todo list
-       */
       gui();
-
-      /**
-       * @brief destructor
-       */
       virtual ~gui();
 
       virtual void callback_handler(int input);
@@ -37,7 +29,6 @@ namespace todo {
       void print_header(WINDOW * win = stdscr);
       virtual int print(WINDOW * win = stdscr);
 
-
       void print_msg(std::string msg);
       void print_msg_u(std::string msg) { m_msg_u = msg; }
 
@@ -46,18 +37,20 @@ namespace todo {
 
       static void init();
 
+      //TODO
+      inline list& lst() { return m_list; }
+
     private:
       /* disabled */
       gui(const gui&);
       gui operator=(const gui&);
 
     protected:
+      list         m_list;
       bool         m_quit;        //< true if to quit
-      int          m_scroll;      //< current scroll position
       std::string  m_msg_u;
 
     public:
-      list    m_list;        //< reference to the actual todo list data
       edit    m_cmdline_edit;
   };
 

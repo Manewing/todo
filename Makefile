@@ -39,7 +39,7 @@ C_EXT  :=c
 #           Init          #
 ###########################
 
-CPP_FLAGS:=$(GFLAG) $(WARNING)
+CPP_FLAGS:=-std=c++14 $(GFLAG) $(WARNING)
 C_FLAGS  :=$(GFLAG) $(WARNING)
 
 TESTS_SRC:=$(wildcard $(TESTSDIR)/*.$(CPP_EXT))

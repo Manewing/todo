@@ -31,7 +31,6 @@ namespace todo {
            uint8_t priority = NORMAL,
            uint8_t state = TODO);
 
-      item(const item & item);
       virtual ~item();
 
       bool operator < (const item& it) const;
@@ -41,15 +40,6 @@ namespace todo {
 
       void set_update(exception * e);
 
-      /**
-       * @brief prints item
-       * @param[in] row    - the row to start printing the item
-       * @param[in] col    - the column to start printing the item
-       * @param[in] size_x - the size of the screen in X direction
-       * @param[in] size_y - the size of the screen in Y direction
-       * @return the amount of rows printed
-       */
-      void set_pos(td_screen_pos_t top);
       virtual int print(WINDOW * win);
 
       static std::string state2string(uint8_t state);
@@ -81,6 +71,7 @@ namespace todo {
       void set_selected(bool selected);
       bool is_selected() const { return m_sel; }
 
+      void set_pos(int top) { m_top_row = top; }
       int get_top_row() const { return m_top_row; }
       int get_bottom_row() const { return m_bottom_row; }
 
@@ -95,10 +86,9 @@ namespace todo {
       uint8_t m_state;            ///< state
       bool m_exp;                 ///< true if expanded
       bool m_sel;
-      int  m_top_row;
-      int  m_bottom_row;
 
-      td_screen_pos_t m_top;
+      int m_top_row;
+      int m_bottom_row;
 
     public:
       multiline_edit m_text_edit;

@@ -140,18 +140,6 @@ namespace todo {
     return 0;
   }
 
-  /*void gui::expand_item() {
-    m_list.expand_selected();
-    item * item = m_list.get_selection();
-    update();
-    if(item) {
-      int bottom_row = item->get_bottom_row();
-      if(bottom_row + 1 >= m_row)
-        m_scroll -= (bottom_row + 1) - m_row;
-    }
-    update();
-  }*/
-
   void gui::print_msg(std::string msg) { //TODO colored?
     int max_row, max_col;
     getmaxyx(stdscr, max_row, max_col);

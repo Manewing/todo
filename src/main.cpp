@@ -34,8 +34,6 @@ int main(int argc, char * argv[]) {
     todo::list::current_file = path;
   }
 
-
-
   todo::gui::init();
 
   todo::gui gui;
@@ -46,69 +44,6 @@ int main(int argc, char * argv[]) {
   while(gui.is_running()) {
     input = getch();
     gui.callback(input);
-   /* switch(gui.get_focus()) {
-      case td_utils::todo::gui::NO_FOCUS:
-        switch(input) {
-          case CMDK_ENTER:
-            gui.expand_item();
-            break;
-          case CMDK_START_CMD: // ':'
-            gui.set_focus(td_utils::todo::gui::CMD_LINE_FOCUS);
-            gui.m_cmdline_edit.visible(true);
-            gui.m_cmdline_edit.print();
-            //gui.start_cmdline();
-            break;
-          case CMDK_EXIT:  // 'q'
-            gui.quit();
-            break;
-          case CMDK_EDIT: // 'e'
-            gui.set_focus(td_utils::todo::gui::ITEM_FOCUS);
-            if(list.get_selection()) {
-              if(!list.get_selection()->is_expanded())
-                gui.expand_item();
-              list.get_selection()->m_text_edit.print();
-            }
-            break;
-          case CMDK_ARROW_DOWN:
-            gui.scroll_down();
-            break;
-          case CMDK_ARROW_UP:
-            gui.scroll_up();
-            break;
-          default:
-            shortcut_update(input, &gui, &list);
-            break;
-        }
-        break;
-      case td_utils::todo::gui::ITEM_FOCUS:
-        switch(input) {
-          case CMDK_ESCAPE:
-            gui.set_focus(td_utils::todo::gui::NO_FOCUS);
-            gui.update();
-            break;
-          default:
-            if(list.get_selection()) {
-              list.get_selection()->m_text_edit.callback(input);
-            }
-            break;
-        }
-        break;
-      case td_utils::todo::gui::CMD_LINE_FOCUS:
-        switch(input) {
-          case CMDK_ESCAPE:
-            gui.m_cmdline_edit.visible(false);
-            gui.m_cmdline_edit.clear();
-            gui.set_focus(td_utils::todo::gui::NO_FOCUS);
-            break;
-          default:
-            gui.m_cmdline_edit.callback(input);
-            break;
-        }
-        break;
-      default:
-        gui.set_focus(td_utils::todo::gui::NO_FOCUS);
-        break;
-    }*/
   }
 
   free(path);

@@ -178,7 +178,7 @@ error_free:
     todo::gui * gui = static_cast<todo::gui*>(params[1]);
     todo::list * list = static_cast<todo::list*>(params[2]);
     std::string message;
-    if(list->save(filename) == 0)
+    if(list->save(filename))
       message = "Saved to file: ";
     else
       message = "Could not save: ";

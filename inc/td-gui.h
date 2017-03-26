@@ -10,6 +10,14 @@
 
 namespace todo {
 
+  class gui_header : public frame {
+    public:
+      gui_header();
+      virtual ~gui_header();
+
+      virtual int print(WINDOW* win);
+  };
+
   class gui : public widget, public update_if {
     public:
       enum { NO_FOCUS, ITEM_FOCUS, CMD_LINE_FOCUS };
@@ -25,8 +33,6 @@ namespace todo {
        */
       virtual void update();
 
-
-      void print_header(WINDOW * win = stdscr);
       virtual int print(WINDOW * win = stdscr);
 
       void print_msg(std::string msg);
@@ -49,6 +55,7 @@ namespace todo {
       list         m_list;
       bool         m_quit;        //< true if to quit
       std::string  m_msg_u;
+      gui_header   m_header;
 
     public:
       edit    m_cmdline_edit;

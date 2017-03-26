@@ -35,6 +35,22 @@ class gui_update_exception : public todo::exception {
 
 namespace todo {
 
+  gui_header::gui_header():
+    frame() {
+    /* nothing todo */
+  }
+
+  gui_header::~gui_header() {
+    /* nothing todo */
+  }
+
+  int gui_header::print(WINDOW* win) {
+    const int cols = m_bottom.scr_x - m_top.scr_x;
+    mvwprintw(m_win, 1, 0, "  # ID   |   Name    ");
+    mvwprintw(m_win, 1, cols - 20, "| Priority | State");
+    return frame::print(win);
+  }
+
   gui::gui():
     widget(),
     m_list(),
@@ -109,33 +125,16 @@ namespace todo {
     refresh();
   }
 
-  void gui::print_header(WINDOW * win) {
-    int cpos1 = 0, cpos2 = 0, col, max_col;
-    getmaxyx(stdscr, col, max_col);
-
-    //print top line
-    wmove(win, 0, 0);
-    for(col = 0; col < max_col; col++)
-      waddch(win, '-');
-
-    //print table
-    mvwprintw(win, 1, 0, "| %n# ID   |   %nName    ", &cpos1, &cpos2);
-    mvwprintw(win, 1, max_col - 20, "| %nPriority | %nState |", &cpos1, &cpos2);
-  }
-
   int gui::print(WINDOW * win) {
-    int row = 0, col = 0;
-    //clear();
-
-    print_header(win);
-
     int max_row, max_col;
     getmaxyx(stdscr, max_row, max_col);
 
+    // print header
+    m_header.set_pos(win, {0, 0}, {-1, 3});
+    m_header.print(win);
+
     //print items
-    td_screen_pos_t top = {col, row + 2 },
-                    bottom = { max_col, max_row-1 };
-    m_list.set_pos(win, top, bottom);
+    m_list.set_pos(win, {0, 2}, { -1, max_row - 1});
     m_list.print(win);
     return 0;
   }

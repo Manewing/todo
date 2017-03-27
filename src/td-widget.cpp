@@ -44,11 +44,8 @@ namespace todo {
     m_focus = (w == NULL ? this : w);
   }
 
-  widget * widget::get_focus() {
-    return m_focus;
-  }
-
   void widget::return_focus() {
+    m_focus = NULL;
     throw &m_fu;
   }
 
@@ -60,13 +57,15 @@ namespace todo {
 #endif
     try {
       m_focus->callback(input);
-    } catch(exception * except) {
+    } catch (exception * except) {
       except->handle(this);
     }
   }
 
   void widget::callback(int input) {
-    if(m_focus == this) {
+    if (m_focus == NULL)
+      m_focus = this;
+    if (m_focus == this) {
 #ifdef TD_DEBUG
       std::stringstream ss;
       ss << "callback -> callback_handler(" << input << ")";

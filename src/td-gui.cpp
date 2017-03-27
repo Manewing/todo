@@ -111,7 +111,7 @@ namespace todo {
   }
 
   void gui::return_focus() {
-    /* nothing todo */
+    m_focus = NULL;
   }
 
   void gui::update() {

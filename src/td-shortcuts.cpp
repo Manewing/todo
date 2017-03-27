@@ -61,7 +61,7 @@ namespace td_utils {
     assert(gui && list);
     todo::item * item = list->get_selection();
     if(item) {
-      list->remove_item(list->get_selection());
+      list->remove(list->get_selection());
       g_executed.push_back(&undo_function_del);
       gui->update();
       gui->print_msg("Removed item...");
@@ -73,7 +73,7 @@ namespace td_utils {
 
   int undo_function_del(todo::gui * gui, todo::list * list) {
     assert(gui && list);
-    list->undo_remove();
+    list->undo();
     gui->update();
     gui->print_msg("Restored item...");
     return 0;

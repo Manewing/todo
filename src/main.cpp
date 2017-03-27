@@ -6,9 +6,6 @@
 #include <assert.h>
 
 #include "td-gui.h"
-#include "td-list.h"
-#include "td-cmd.h"
-#include "td-shortcuts.h"
 
 #include "sys-utils.h"
 

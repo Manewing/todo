@@ -45,31 +45,19 @@ namespace todo {
 
   list::list():
     frame(),
+    m_buf(),
     m_list(),
     m_sel(m_list.end()),
-    m_removed_items(),
+    m_history(),
     m_scroll(0) {
 
     /* nothing todo */
 
   }
 
-  list::list(std::string const& file_name):
-    frame(),
-    m_list(),
-    m_sel(m_list.end()),
-    m_removed_items(),
-    m_scroll(0) {
-
-    load(file_name);
-
-  }
-
   list::~list() {
     // cleanup
-    for (auto it : m_list)
-      delete it;
-    for (auto it : m_removed_items)
+    for (auto it : m_buf)
       delete it;
   }
 
@@ -84,12 +72,16 @@ namespace todo {
 
   }
 
-  void list::add_item(item* i) {
+  void list::add(item* i) {
+    // update history before adding item
+    update_history();
+
     // if list is not empty deselect current item
     if (m_sel != end())
       (*m_sel)->set_selected(false);
 
     // add new item and sort list again
+    m_buf.insert(i);
     m_list.push_back(i);
     m_sel = --end();
     (*m_sel)->set_selected(true);
@@ -98,43 +90,34 @@ namespace todo {
     sort();
   }
 
-  void list::remove_item(item * i) {
-
-    // check if item was selected item
-    if (*m_sel == i) {
-      iterator it = m_sel;
-      if (++it != end()) { // not the last item?
-        m_sel = it;
-        (*m_sel)->set_selected(true);
-      } else if (m_sel != begin()) { // not the first item?
-        --m_sel;
-        (*m_sel)->set_selected(true);
-      } else // the only item
-        m_sel = end();
-    }
-
-    m_removed_items.push_back(i);
-    m_list.remove(i);
-
-    // re-sort list
-    sort();
-  }
-
-  void list::undo_remove() {
-    // remove to undo?
-    if(m_removed_items.empty())
+  void list::remove(item * i) {
+    // find item
+    auto it = std::find(m_list.begin(), m_list.end(), i);
+    if (it == m_list.end())
       return;
 
-    item* i = m_removed_items.back();
-    i->set_selected(false);
-    m_removed_items.pop_back();
-    m_list.push_back(i);
-    sort();
+    // update history before removing item
+    update_history();
 
-    if(m_sel == end()) {
-      m_sel = begin();
+    // make sure item is unselected
+    (*it)->set_selected(false);
+
+    // remove item and update selection
+    m_sel = m_list.erase(it);
+    if (m_sel != m_list.end())
       (*m_sel)->set_selected(true);
-    }
+    else if (m_sel != m_list.begin())
+      (*--m_sel)->set_selected(true);
+  }
+
+  void list::undo() {
+    if (m_sel != end())
+      (*m_sel)->set_selected(false);
+
+    m_list = m_history.back();
+    m_sel = m_list.begin();
+    (*m_sel)->set_selected(true);
+    m_history.pop_back();
   }
 
   void list::select_next() {
@@ -219,7 +202,7 @@ namespace todo {
       // create item and add item
       item* i = new item(name, comment, i_fheader.__prio, i_fheader.__state);
       i->set_id(i_fheader.__id);
-      add_item(i);
+      add(i);
 
       delete [] name;
       delete [] comment;
@@ -261,6 +244,10 @@ namespace todo {
     }
     file.close();
     return true;
+  }
+
+  void list::update_history() {
+    m_history.push_back(m_list);
   }
 
   void list::update_scroll() {

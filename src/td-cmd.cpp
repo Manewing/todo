@@ -218,7 +218,7 @@ error_free:
     const char * item_name = (const char *)params[0];
     todo::list * list = (todo::list *)params[1];
     todo::item* new_item = new todo::item(item_name, "(empty)");
-    list->add_item(new_item);
+    list->add(new_item);
     return 0;
   }
 

@@ -2,11 +2,11 @@
 #define TODO_GUI_HH
 
 #include <ncurses.h>
-#include "td-widget.h"
-#include "td-defs.h"
-#include "td-list.h"
 
+#include "td-defs.h"
+#include "td-widget.h"
 #include "td-edit.h"
+#include "td-list.h"
 
 namespace todo {
 

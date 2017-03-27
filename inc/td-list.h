@@ -1,8 +1,10 @@
 #ifndef TODO_LIST_HH
 #define TODO_LIST_HH
 
+#include <set>
 #include <list>
 #include <string>
+#include <tuple>
 
 #include "td-item.h"
 #include "td-frame.h"
@@ -19,9 +21,12 @@ namespace todo {
       static std::string       current_file;
       static std::string const default_filename;
 
+    private:
+      typedef std::set<item*>    buffer_t;
+      typedef std::list<list_t>  history_t;
+
     public:
       list();
-      list(std::string const& file_name);
 
       list(list const&) = delete;
       list& operator = (list const&) = delete;
@@ -35,9 +40,11 @@ namespace todo {
 
       void sort();
 
-      void add_item(item* i);
-      void remove_item(item* i);
-      void undo_remove();
+      void add(item* i);
+      void remove(item* i);
+
+      void undo();
+      void redo();
 
       void select_next();
       void select_prev();
@@ -50,13 +57,14 @@ namespace todo {
       bool save(std::string const& file_name);
 
     private:
+      void update_history();
       void update_scroll();
 
     private:
+      buffer_t  m_buf;
       list_t    m_list;
       iterator  m_sel;
-      list_t    m_removed_items;
-
+      history_t m_history;
       int       m_scroll;
   };
 

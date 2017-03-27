@@ -56,8 +56,8 @@ namespace todo {
       void set_name(std::string name) { m_name = name; }
       std::string get_name() const { return m_name; }
 
-      void set_comment(std::string comment) { m_comment = comment; }
-      std::string get_comment() const { return m_comment; }
+      void set_comment(std::string comment) { m_text_edit.set_text(comment); }
+      std::string const& get_comment() const { return m_text_edit.get_text(); }
 
       void set_priority(uint8_t priority) { m_priority = priority; }
       uint8_t get_priority() const { return m_priority; }

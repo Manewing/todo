@@ -44,7 +44,7 @@ namespace todo {
       //< sets text of edit
       void set_text(std::string text);
       //< get text of edit
-      std::string get_text() { return m_text; }
+      std::string const& get_text() const { return m_text; }
 
 
       //< sets text edit pos

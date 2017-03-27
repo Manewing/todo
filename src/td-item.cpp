@@ -24,7 +24,6 @@ namespace todo {
     widget(),
     m_ID(++MID),
     m_name(name),
-    m_comment(comment),
     m_priority(priority),
     m_state(state),
     m_exp(false),

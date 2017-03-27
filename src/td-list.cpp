@@ -69,6 +69,8 @@ namespace todo {
     // cleanup
     for (auto it : m_list)
       delete it;
+    for (auto it : m_removed_items)
+      delete it;
   }
 
   void list::sort() {

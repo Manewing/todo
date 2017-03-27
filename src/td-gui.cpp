@@ -6,9 +6,7 @@
 
 class gui_edit_submit_exception : public todo::exception {
   public:
-    gui_edit_submit_exception(todo::edit * edit)
-      : todo::exception(edit) {}
-    virtual void process(todo::widget * handler) {
+    virtual void handle(todo::widget * handler) const {
       // get gui and edit
       todo::gui * gui = dynamic_cast<todo::gui*>(handler);
       todo::edit * edit = dynamic_cast<todo::edit*>(m_notifier);
@@ -25,9 +23,7 @@ class gui_edit_submit_exception : public todo::exception {
 
 class gui_update_exception : public todo::exception {
   public:
-    gui_update_exception(todo::widget * notifier)
-      : todo::exception(notifier) {}
-    virtual void process(todo::widget * handler) {
+    virtual void handle(todo::widget * handler) const {
       todo::widget::static_log_debug("gui_update_exception", "print");
       m_notifier->print(stdscr);
     }
@@ -71,8 +67,8 @@ namespace todo {
     td_screen_pos_t end = { max_col, max_row-1 };
     m_cmdline_edit.set_pos(pos);
     m_cmdline_edit.set_end(end);
-    m_cmdline_edit.set_callback(new gui_edit_submit_exception(&m_cmdline_edit), CMDK_ENTER);
-    m_cmdline_edit.set_callback(new gui_update_exception(&m_cmdline_edit), CMDK_TRIGGERED);
+    m_cmdline_edit.set_callback(new gui_edit_submit_exception, CMDK_ENTER);
+    m_cmdline_edit.set_callback(new gui_update_exception, CMDK_TRIGGERED);
     m_cmdline_edit.visible(false);
 
     //update

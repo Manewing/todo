@@ -2,10 +2,16 @@
 #define TODO_WIDGET_HH
 
 #include <ncurses.h>
-#include <list>
 #include <fstream>
 
+#include "td-except.h"
+
 namespace todo {
+
+  class widget_fu : public exception {
+    public:
+      virtual void handle(widget* handler) const;
+  };
 
   class widget {
     public:
@@ -35,8 +41,10 @@ namespace todo {
 
     private:
       static std::ofstream log_file;
+
     protected:
-      widget * m_focus;
+      widget *  m_focus;
+      widget_fu m_fu;
 
   }; // class widget
 

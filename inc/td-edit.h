@@ -20,11 +20,7 @@ namespace todo {
        */
       edit_base();
 
-      /**
-       * @brief copy constructor, creates new todo text edit
-       * @param[in] edit - edit to copy
-       */
-      edit_base(const edit_base&);
+      edit_base(edit_base const&) = delete;
 
       /**
        * @brief destructor
@@ -37,12 +33,7 @@ namespace todo {
        */
       virtual void callback_handler(int input);
 
-      /**
-       * @brief sets callback for given input
-
-       * @param[in] input     - the input to trigger callback
-       */
-      void set_callback(exception * except, int input);
+      void set_callback(exception* except, int input);
 
       //< if edit is visible prints edit to screen
       virtual int print(WINDOW * win) = 0;
@@ -105,11 +96,7 @@ namespace todo {
        */
       edit(std::string prefix = "");
 
-      /**
-       * @brief copy constructor, creates new todo text edit
-       * @param[in] edit - edit to copy
-       */
-      edit(const edit & edit);
+      edit(const edit &) = delete;
 
       /**
        * @brief callback handler if new input has occurred
@@ -132,7 +119,7 @@ namespace todo {
   class multiline_edit : public edit_base {
     public:
       multiline_edit();
-      multiline_edit(const multiline_edit&);
+      multiline_edit(const multiline_edit&) = delete;
 
       /**
        * @brief callback if new input has occurred

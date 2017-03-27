@@ -20,9 +20,7 @@ namespace todo {
 
   class urecall_exception : public exception {
     public:
-      urecall_exception(widget * notifier);
-      virtual ~urecall_exception();
-      virtual void process(widget * handler);
+      virtual void handle(widget * handler) const;
   };
 
 }; // namespace todo

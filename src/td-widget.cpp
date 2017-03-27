@@ -10,23 +10,19 @@
 
 namespace todo {
 
-  class widget_focus_update : public su_exception {
-    public:
-      widget_focus_update(widget * notifier = NULL)
-        : su_exception(notifier) {}
-      virtual void process(widget * handler) {
-        std::stringstream ss;
-        ss << "handler: " << handler;
-        widget::static_log_debug("focus update", ss.str());
-        handler->set_focus(handler);
-      }
-  };
-
+  void widget_fu::handle(widget * handler) const {
+    std::stringstream ss;
+    ss << "handler: " << handler;
+    widget::static_log_debug("focus update", ss.str());
+    handler->set_focus(handler);
+  }
 
   static unsigned int access_counter = 0;
   std::ofstream widget::log_file;
 
-  widget::widget() : m_focus(this) {
+  widget::widget():
+    m_focus(this),
+    m_fu() {
     if(access_counter++ == 0) {
       log_file.open(
         #ifdef TD_DEBUG
@@ -53,7 +49,7 @@ namespace todo {
   }
 
   void widget::return_focus() {
-    throw new widget_focus_update();
+    throw &m_fu;
   }
 
   void widget::call_focus(int input) {

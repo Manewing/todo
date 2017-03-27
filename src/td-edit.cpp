@@ -17,24 +17,15 @@ namespace todo {
     m_pos.scr_y = 0;
     m_end.scr_x = 0;
     m_end.scr_y = 0;
-    set_update(new urecall_exception(this));
-  }
-
-  edit_base::edit_base(const edit_base & edit)
-           : widget(), m_visible(edit.m_visible),
-             m_pos(edit.m_pos), m_end(edit.m_end), m_text(edit.m_text),
-             m_cursor_pos(edit.m_cursor_pos), m_callbacks() {
-    set_update(new urecall_exception(this));
+    set_update(new urecall_exception);
   }
 
   /**
    * @brief destructor
    */
   edit_base::~edit_base() {
-    std::map<int, exception*>::iterator it;
-    for(it = m_callbacks.begin(); it != m_callbacks.end(); it++) {
-      delete it->second;
-    }
+    for (auto it : m_callbacks)
+      delete it.second;
   }
 
   /**
@@ -64,7 +55,7 @@ namespace todo {
         del_char(false);
         break;
       case CMDK_ESCAPE:
-        widget::log_debug("edit_base", "return_focus");
+        widget::log_debug("edit_base", "return focus");
         return_focus();
         break;
       default:
@@ -85,11 +76,10 @@ namespace todo {
    * @brief sets callback for given input
    * @param[in] input - the input to trigger callback
    */
-  void edit_base::set_callback(exception * except, int input) {
-    if(!except) return;
-    if(m_callbacks[input])
+  void edit_base::set_callback(exception* except, int input) {
+    if (m_callbacks[input])
       delete m_callbacks[input];
-    m_callbacks[input] = except;
+    m_callbacks[input] = &except->notifier(this);
   }
 
   //< clears edit
@@ -139,13 +129,6 @@ namespace todo {
     edit_base(),
     m_prefix(prefix),
     m_history(),
-    m_history_ptr(m_history.begin()) {
-  }
-
-  edit::edit(const edit & e):
-    edit_base(e),
-    m_prefix(e.m_prefix),
-    m_history(e.m_history),
     m_history_ptr(m_history.begin()) {
   }
 
@@ -211,10 +194,6 @@ namespace todo {
 
   multiline_edit::multiline_edit():
     edit_base() {
-  }
-
-  multiline_edit::multiline_edit(const multiline_edit& me):
-    edit_base(me) {
   }
 
   void multiline_edit::callback_handler(int input) {

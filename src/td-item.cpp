@@ -10,17 +10,6 @@ namespace todo {
   uint32_t item::MID = 0;
   uint8_t  item::SORT_BY = ID;
 
-  class item_submit_exception : public exception {
-    public:
-      item_submit_exception(edit * ed) : exception(ed) {}
-      virtual void process(widget * handler) {
-        item * it = dynamic_cast<todo::item*>(handler);
-        edit * ed = dynamic_cast<todo::edit*>(m_notifier);
-        it->set_comment(ed->get_text());
-        it->return_focus();
-      }
-  };
-
   item::item():
     widget(),
     m_ID(++MID),

@@ -1,4 +1,5 @@
 #include "td-update.h"
+#include "td-widget.h"
 
 namespace todo {
 
@@ -19,12 +20,7 @@ namespace todo {
       throw m_update_except;
   }
 
-  urecall_exception::urecall_exception(widget * notifier):
-    exception(notifier) {}
-
-  urecall_exception::~urecall_exception() {}
-
-  void urecall_exception::process(widget * handler) {
+  void urecall_exception::handle(widget * handler) const {
     update_if * uif = dynamic_cast<update_if*>(handler);
     uif->update();
   }

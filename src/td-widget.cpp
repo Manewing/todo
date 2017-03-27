@@ -21,7 +21,7 @@ namespace todo {
   std::ofstream widget::log_file;
 
   widget::widget():
-    m_focus(this),
+    m_focus(NULL),
     m_fu() {
     if(access_counter++ == 0) {
       log_file.open(

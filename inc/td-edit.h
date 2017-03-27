@@ -15,12 +15,16 @@ namespace todo {
   class edit_base : public widget,
                     public update_if {
     public:
+      typedef std::map<int, exception*> callbacks_t;
+
+    public:
       /**
        * @brief constructor, creates new todo text edit
        */
       edit_base();
 
       edit_base(edit_base const&) = delete;
+      edit_base(edit_base &&) = delete;
 
       /**
        * @brief destructor
@@ -80,12 +84,12 @@ namespace todo {
       void del_char(bool at);
 
     protected:
-      bool m_visible;
+      bool            m_visible;
       td_screen_pos_t m_pos;
       td_screen_pos_t m_end;
-      std::string m_text;
-      unsigned int m_cursor_pos;
-      std::map<int, exception*> m_callbacks;
+      std::string     m_text;
+      unsigned int    m_cursor_pos;
+      callbacks_t     m_callbacks;
   };
 
   class edit : public edit_base {

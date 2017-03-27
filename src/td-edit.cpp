@@ -55,7 +55,6 @@ namespace todo {
         del_char(false);
         break;
       case CMDK_ESCAPE:
-        widget::log_debug("edit_base", "return focus");
         return_focus();
         break;
       default:
@@ -171,7 +170,6 @@ namespace todo {
     // do not need to do anything if not visible
     if(!m_visible) return 0;
 
-    int row_count = 0;
     std::string str = m_prefix + m_text + " ";
     const int size_x = m_end.scr_x - m_pos.scr_x - 1;
 
@@ -185,11 +183,11 @@ namespace todo {
       waddch(win, ' ');
 
     mvwaddnstr(win, m_pos.scr_y, m_pos.scr_x, str.c_str() + start_pos, size_x);
-    str = m_prefix + m_text.substr(0, m_cursor_pos);
-    mvwaddnstr(win, m_pos.scr_y, m_pos.scr_x, str.c_str() + start_pos, size_x);
-    row_count = 1;
-    curs_set(1);
-    return row_count;
+    if (has_focus()) {
+      gui::cursor_pos.scr_x = m_pos.scr_x + actual_cursor_pos - 1;
+      gui::cursor_pos.scr_y = m_pos.scr_y;
+    }
+    return 1;
   }
 
   multiline_edit::multiline_edit():
@@ -226,9 +224,10 @@ namespace todo {
       mvwaddnstr(win, m_pos.scr_y + l, m_pos.scr_x, str.c_str() + (l * size_x), size_x);
     unsigned int cursor_row_pos = m_cursor_pos / size_x;
     unsigned int cursor_col_pos = m_cursor_pos % size_x;
-    mvwaddnstr(win, m_pos.scr_y + cursor_row_pos, m_pos.scr_x,
-        str.c_str() + (cursor_row_pos * size_x), cursor_col_pos);
-    curs_set(1);
+    if (has_focus()) {
+      gui::cursor_pos.scr_x = m_pos.scr_x + cursor_col_pos;
+      gui::cursor_pos.scr_y = m_pos.scr_y + cursor_row_pos + 2;
+    }
     return row_count;
   }
 

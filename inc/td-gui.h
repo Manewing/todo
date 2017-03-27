@@ -21,16 +21,14 @@ namespace todo {
   class gui : public widget, public update_if {
     public:
       enum { NO_FOCUS, ITEM_FOCUS, CMD_LINE_FOCUS };
+      static td_screen_pos_t cursor_pos;
+
     public:
       gui();
       virtual ~gui();
 
       virtual void callback_handler(int input);
       virtual void return_focus();
-
-      /**
-       * @brief updates gui
-       */
       virtual void update();
 
       virtual int print(WINDOW * win = stdscr);

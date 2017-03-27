@@ -21,14 +21,6 @@ class gui_edit_submit_exception : public todo::exception {
     }
 };
 
-class gui_update_exception : public todo::exception {
-  public:
-    virtual void handle(todo::widget * handler) const {
-      todo::widget::static_log_debug("gui_update_exception", "print");
-      m_notifier->print(stdscr);
-    }
-};
-
 namespace todo {
 
   gui_header::gui_header():
@@ -46,6 +38,8 @@ namespace todo {
     mvwprintw(m_win, 1, cols - 20, "| Priority | State");
     return frame::print(win);
   }
+
+  td_screen_pos_t gui::cursor_pos = {-1, -1};
 
   gui::gui():
     widget(),
@@ -68,7 +62,6 @@ namespace todo {
     m_cmdline_edit.set_pos(pos);
     m_cmdline_edit.set_end(end);
     m_cmdline_edit.set_callback(new gui_edit_submit_exception, CMDK_ENTER);
-    m_cmdline_edit.set_callback(new gui_update_exception, CMDK_TRIGGERED);
     m_cmdline_edit.visible(false);
 
     //update
@@ -102,6 +95,7 @@ namespace todo {
       case CMDK_EDIT:
         m_list.expand_selected(true);
         set_focus(m_list.get_selection());
+        callback(CMDK_TRIGGERED);
       default:
         td_utils::shortcut_update(input, this, &m_list);
         break;
@@ -116,12 +110,11 @@ namespace todo {
 
   void gui::update() {
     print();
-    print_msg(m_msg_u);
-    m_msg_u = "";
     refresh();
   }
 
   int gui::print(WINDOW * win) {
+    curs_set(0);
     int max_row, max_col;
     getmaxyx(stdscr, max_row, max_col);
 
@@ -132,12 +125,27 @@ namespace todo {
     //print items
     m_list.set_pos(win, {0, 2}, { -1, max_row - 1});
     m_list.print(win);
+
+    // print command line
+    m_cmdline_edit.print(win);
+
+    // print message
+    if (m_msg_u.size())
+      print_msg(m_msg_u);
+    m_msg_u = "";
+
+    curs_set(1);
+    move(gui::cursor_pos.scr_y, gui::cursor_pos.scr_x);
+    gui::cursor_pos.scr_x = 0;
+    gui::cursor_pos.scr_y = max_row - 1;
+
     return 0;
   }
 
   void gui::print_msg(std::string msg) { //TODO colored?
     int max_row, max_col;
     getmaxyx(stdscr, max_row, max_col);
+    curs_set(0);
     mvprintw(max_row-1, 0, "%s", msg.c_str());
   }
 

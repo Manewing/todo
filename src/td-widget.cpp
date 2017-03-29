@@ -8,6 +8,8 @@
 //debug TODO remove
 #include <sstream>
 
+#include "sys-utils.h"
+
 namespace todo {
 
   void widget_fu::handle(widget * handler) const {
@@ -24,13 +26,13 @@ namespace todo {
     m_focus(NULL),
     m_fu() {
     if(access_counter++ == 0) {
-      log_file.open(
-        #ifdef TD_DEBUG
-          "td.log",
-       #else
-          ".td.log", // TODO
-       #endif
-          std::ios_base::out);
+      std::string log_file_name = get_home_directory();
+#ifdef TD_DEBUG
+      log_file_name += "/td.log";
+#else
+      log_file_name += "/.td.log"; // TODO
+#endif
+      log_file.open(log_file_name.c_str(), std::ios_base::out);
     }
   }
 

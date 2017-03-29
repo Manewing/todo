@@ -1,9 +1,10 @@
 #ifndef TODO_GUI_EDIT_HH
 #define TODO_GUI_EDIT_HH
 
-#include <string>
-#include <list>
 #include <map>
+#include <list>
+#include <vector>
+#include <string>
 
 #include "td-widget.h"
 #include "td-except.h"
@@ -121,9 +122,15 @@ namespace todo {
   };
 
   class multiline_edit : public edit_base {
+    protected:
+      typedef std::pair<size_t, size_t>             interval_t;
+      typedef std::vector<interval_t>               intervals_t;
+      typedef std::pair<intervals_t, std::string>   wrapped_t;
+
     public:
       multiline_edit();
       multiline_edit(const multiline_edit&) = delete;
+      multiline_edit& operator=(const multiline_edit&) = delete;
 
       /**
        * @brief callback if new input has occurred
@@ -133,8 +140,15 @@ namespace todo {
 
       //< if edit is visible prints edit to screen
       virtual int print(WINDOW * win);
-    private:
-      multiline_edit operator=(const multiline_edit&);
+
+    protected:
+      static size_t wrapped_pos(intervals_t const& itvs, td_screen_pos_t cords);
+      static td_screen_pos_t wrapped_cords(intervals_t const& itvs, size_t pos);
+      static wrapped_t word_wrap(std::string const& str, size_t const line_size);
+
+    protected:
+      td_screen_pos_t m_cursor_cord;
+      wrapped_t       m_wrapped_text;
   };
 
 }; // namespace todo

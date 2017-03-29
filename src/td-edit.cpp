@@ -4,6 +4,7 @@
 #include <string.h>
 #include <sstream>
 
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 namespace todo {
 
@@ -40,27 +41,6 @@ namespace todo {
     widget::log_debug("edit_base", ss.str());
 #endif
     switch(input) {
-      case CMDK_ARROW_LEFT:
-        if(m_cursor_pos > 1)
-          m_cursor_pos--;
-        break;
-      case CMDK_ARROW_RIGHT:
-        if(m_cursor_pos < m_text.length())
-          m_cursor_pos++;
-        break;
-      case CMDK_DELETE:
-        del_char(true);
-        break;
-      case CMDK_BACKSPACE:
-        del_char(false);
-        break;
-      case CMDK_ESCAPE:
-        return_focus();
-        break;
-      default:
-        if(is_valid(input))
-          add_char(input & 0xFF);
-        break;
     }
 
     // trigger callback if set
@@ -133,6 +113,14 @@ namespace todo {
 
   void edit::callback_handler(int input) {
     switch(input) {
+      case CMDK_ARROW_LEFT:
+        if(m_cursor_pos > 1)
+          m_cursor_pos--;
+        break;
+      case CMDK_ARROW_RIGHT:
+        if(m_cursor_pos < m_text.length())
+          m_cursor_pos++;
+        break;
       case CMDK_ARROW_UP:
         if(m_history_ptr != m_history.begin())
           m_history_ptr--;
@@ -154,15 +142,24 @@ namespace todo {
         m_history_ptr = m_history.end();
         break;
       case CMDK_DELETE:
-      case CMDK_BACKSPACE:
+        del_char(true);
         m_history_ptr = m_history.end();
+        break;
+      case CMDK_BACKSPACE:
+        del_char(false);
+        m_history_ptr = m_history.end();
+        break;
+      case CMDK_ESCAPE:
+        return_focus();
         break;
       default:
         if(is_valid(input)) {
+          add_char(input & 0xFF);
           m_history_ptr = m_history.end();
         }
         break;
     }
+
     edit_base::callback_handler(input);
   }
 
@@ -192,22 +189,79 @@ namespace todo {
 
   multiline_edit::multiline_edit():
     edit_base() {
+    size_t const size_x = m_end.scr_x - m_pos.scr_x - 1;
+    m_wrapped_text = multiline_edit::word_wrap(m_text, size_x);
+    m_cursor_cord = multiline_edit::wrapped_cords(m_wrapped_text.first, m_cursor_pos);
   }
 
   void multiline_edit::callback_handler(int input) {
 #ifdef TD_DEBUG
     widget::log_debug("multiline_edit", "in callback_handler");
 #endif
+
+    auto const& itvs = m_wrapped_text.first;
+    bool update_wr = false, update_cp = false;
     switch(input) {
+      case CMDK_ARROW_LEFT:
+        if (m_cursor_cord.scr_x >= 1) {
+          m_cursor_cord.scr_x--;
+          update_cp = true;
+        }
+        break;
+      case CMDK_ARROW_RIGHT:
+        if (m_cursor_cord.scr_x < itvs.at(m_cursor_cord.scr_y).second - 1) {
+          m_cursor_cord.scr_x++;
+          update_cp = true;
+        }
+        break;
       case CMDK_ARROW_UP:
-        if((int)m_cursor_pos - (m_end.scr_x - m_pos.scr_x) > 0)
-          m_cursor_pos -= (m_end.scr_x - m_pos.scr_x - 1) ;
+        if (m_cursor_cord.scr_y > 0) {
+          m_cursor_cord.scr_y--;
+          size_t size_x = itvs.at(m_cursor_cord.scr_y).second;
+          m_cursor_cord.scr_x = MIN(m_cursor_cord.scr_x, size_x - 1);
+          update_cp = true;
+        }
         break;
       case CMDK_ARROW_DOWN:
-        if((int)m_cursor_pos + (m_end.scr_x - m_pos.scr_x) < (int)m_text.length())
-          m_cursor_pos += (m_end.scr_x - m_pos.scr_x - 1);
+        if (m_cursor_cord.scr_y < m_wrapped_text.first.size() - 1) {
+          m_cursor_cord.scr_y++;
+          size_t size_x = itvs.at(m_cursor_cord.scr_y).second;
+          m_cursor_cord.scr_x = MIN(m_cursor_cord.scr_x, size_x - 1);
+          update_cp = true;
+        }
+        break;
+      case CMDK_ENTER:
+        add_char('\n');
+        update_wr = true;
+        break;
+      case CMDK_DELETE:
+        del_char(true);
+        update_wr = true;
+        break;
+      case CMDK_BACKSPACE:
+        del_char(false);
+        update_wr = true;
+        break;
+      case CMDK_ESCAPE:
+        return_focus();
+        break;
+      default:
+        if(is_valid(input)) {
+          add_char(input & 0xFF);
+          update_wr = true;
+        }
         break;
     }
+
+    if (update_cp)
+      m_cursor_pos = wrapped_pos(itvs, m_cursor_cord);
+
+    if (update_wr) {
+      size_t const size_x = m_end.scr_x - m_pos.scr_x - 1;
+      m_wrapped_text = multiline_edit::word_wrap(m_text, size_x);
+      m_cursor_cord = multiline_edit::wrapped_cords(m_wrapped_text.first, m_cursor_pos);
+    }
+
     edit_base::callback_handler(input);
   }
 
@@ -215,20 +269,94 @@ namespace todo {
     // do not need to do anything if not visible
     if(!m_visible) return 0;
 
-    int row_count = 0;
-    std::string str = m_text + " ";
-    const int size_x = m_end.scr_x - m_pos.scr_x - 1;
+    auto const& cuts = m_wrapped_text.first;
+    auto const& disp_str = m_wrapped_text.second;
 
-    row_count = str.length() / size_x + 1;
-    for(int l = 0; l < row_count; l++)
-      mvwaddnstr(win, m_pos.scr_y + l, m_pos.scr_x, str.c_str() + (l * size_x), size_x);
-    unsigned int cursor_row_pos = m_cursor_pos / size_x;
-    unsigned int cursor_col_pos = m_cursor_pos % size_x;
+    int row_count = 0;
+    for (auto const& it : cuts) {
+      mvwaddnstr(win, m_pos.scr_y + row_count++,
+          m_pos.scr_x, disp_str.c_str()+it.first, it.second);
+    }
+
     if (has_focus()) {
-      gui::cursor_pos.scr_x = m_pos.scr_x + cursor_col_pos;
-      gui::cursor_pos.scr_y = m_pos.scr_y + cursor_row_pos + 2;
+      gui::cursor_pos.scr_x = m_pos.scr_x + m_cursor_cord.scr_x;
+      gui::cursor_pos.scr_y = m_pos.scr_y + m_cursor_cord.scr_y + 2;
     }
     return row_count;
   }
+
+  size_t multiline_edit::wrapped_pos(intervals_t const& itvs,
+                                     td_screen_pos_t cords) {
+    auto const& p = itvs.at(cords.scr_y);
+    size_t pos = p.first;
+    pos += cords.scr_x < p.second ? cords.scr_x : p.second;
+    return pos;
+  }
+
+  td_screen_pos_t multiline_edit::wrapped_cords(intervals_t const& itvs,
+                                                size_t pos) {
+    td_screen_pos_t cords = {0, 0};
+    for (auto const& it : itvs) {
+      if (it.first <= pos && pos < it.first + it.second) {
+        cords.scr_x = pos - it.first;
+        break;
+      }
+      cords.scr_y++;
+    }
+    return cords;
+  }
+
+  multiline_edit::wrapped_t multiline_edit::word_wrap(std::string const& str,
+                                                      size_t const line_size) {
+    wrapped_t wr;
+    intervals_t& cuts = wr.first;
+    std::string& disp_str = wr.second;
+
+    // copy string
+    disp_str = str;
+
+    // reserve for least amount of lines
+    cuts.reserve(str.size() / line_size + 1);
+
+    size_t pos = 0, tmp = 0, size = 0, last = 0;
+    while (pos < str.size()) {
+      if (str[pos] != ' ' && str[pos] != '\n') {
+        // add non whitespace char to tmp
+        tmp++;
+      } else {
+        // current line size with tmp and
+        // whitespace greater than line size?
+        if (size + tmp + 1 > line_size) {
+          cuts.push_back( interval_t {last, size} );
+          last += size;
+          size = 0;
+        }
+
+        size += ++tmp;
+        tmp = 0;
+
+        if (str[pos] == '\n') {
+          // got new line -> forced cut
+          cuts.push_back( interval_t {last, size} );
+          disp_str[last + size - 1] = ' ';
+          last += size;
+          size = 0;
+        }
+      }
+      pos++;
+    }
+
+    if (size + tmp + 1 > line_size) {
+      cuts.push_back( interval_t {last, size} );
+      last += size;
+      size = 0;
+    }
+    size += tmp;
+    cuts.push_back(interval_t {last, size + 1} );
+    disp_str.push_back(' ');
+
+    return wr;
+  }
+
 
 }; // namespace todo

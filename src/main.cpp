@@ -31,9 +31,7 @@ int main(int argc, char * argv[]) {
     todo::list::current_file = path;
   }
 
-  todo::gui::init();
-
-  todo::gui gui;
+  todo::gui& gui = todo::gui::get();
   gui.lst().load(path);
   gui.update();
 
@@ -43,5 +41,6 @@ int main(int argc, char * argv[]) {
     gui.callback(input);
   }
 
+  todo::gui::free();
   free(path);
 }

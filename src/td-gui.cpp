@@ -41,6 +41,26 @@ namespace todo {
 
   td_screen_pos_t gui::cursor_pos = {-1, -1};
 
+  gui& gui::get() {
+    if (m_instance == NULL) {
+
+      // screen has to be initialized before any
+      // new window can be created
+      initscr();
+
+      m_instance = new gui();
+    }
+    return *m_instance;
+  }
+
+  void gui::free() {
+    endwin();
+    delete m_instance;
+    m_instance = NULL;
+  }
+
+  gui* gui::m_instance = NULL;
+
   gui::gui():
     widget(),
     m_list(),
@@ -48,9 +68,17 @@ namespace todo {
     m_msg_u(),
     m_cmdline_edit(":") {
 
+    // set input to raw
+    raw();
+    keypad(stdscr, true);
+    noecho();
+    set_escdelay(0);
+
     //init colors
     start_color();
-    use_default_colors(); //use terminal colors
+
+    // use terminal colors
+    use_default_colors();
     for(int i = 0; i < 8; i++)
       init_pair(i+1, i, -1);
 
@@ -69,16 +97,15 @@ namespace todo {
   }
 
   gui::~gui() {
-    endwin();
+    /* nothing todo */
   }
 
   void gui::callback_handler(int input) {
     widget::log_debug("gui", "in callback_handler");
     switch(input) {
       case CMDK_START_CMD:
-        set_focus(&m_cmdline_edit);
         m_cmdline_edit.visible(true);
-        m_cmdline_edit.print(stdscr);
+        set_focus(&m_cmdline_edit);
         break;
       case CMDK_EXIT:
         quit();
@@ -95,7 +122,6 @@ namespace todo {
       case CMDK_EDIT:
         m_list.expand_selected(true);
         set_focus(m_list.get_selection());
-        callback(CMDK_TRIGGERED);
       default:
         td_utils::shortcut_update(input, this, &m_list);
         break;
@@ -147,22 +173,6 @@ namespace todo {
     getmaxyx(stdscr, max_row, max_col);
     curs_set(0);
     mvprintw(max_row-1, 0, "%s", msg.c_str());
-  }
-
-  void gui::quit() {
-    m_quit = true;
-  }
-
-  bool gui::is_running() {
-    return !m_quit;
-  }
-
-  void gui::init() {
-    initscr();
-    raw();
-    keypad(stdscr, true);
-    noecho();
-    set_escdelay(0);
   }
 
 }; // namespace todo

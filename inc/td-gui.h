@@ -23,9 +23,16 @@ namespace todo {
       enum { NO_FOCUS, ITEM_FOCUS, CMD_LINE_FOCUS };
       static td_screen_pos_t cursor_pos;
 
-    public:
+      static gui& get();
+      static void free();
+
+    private:
+      static gui* m_instance;
+
       gui();
       virtual ~gui();
+
+    public:
 
       virtual void callback_handler(int input);
       virtual void return_focus();
@@ -36,12 +43,8 @@ namespace todo {
       void print_msg(std::string msg);
       void print_msg_u(std::string msg) { m_msg_u = msg; }
 
-      void quit();
-      bool is_running();
-
-      static void init();
-
-      //TODO
+      inline void quit() { m_quit = true; }
+      inline bool is_running() const { return !m_quit; }
       inline list& lst() { return m_list; }
 
     private:

@@ -40,14 +40,11 @@ namespace todo {
        << input << ", " << std::dec << input << ", text: " << m_text;
     widget::log_debug("edit_base", ss.str());
 #endif
-    switch(input) {
-    }
 
     // trigger callback if set
     if(m_callbacks[input])
       throw m_callbacks[input];
-    if(m_callbacks[CMDK_TRIGGERED])
-      throw m_callbacks[CMDK_TRIGGERED];
+
     update();
   }
 

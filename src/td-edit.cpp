@@ -188,10 +188,11 @@ namespace todo {
   }
 
   multiline_edit::multiline_edit():
-    edit_base() {
-    size_t const size_x = m_end.scr_x - m_pos.scr_x - 1;
-    m_wrapped_text = multiline_edit::word_wrap(m_text, size_x);
-    m_cursor_cord = multiline_edit::wrapped_cords(m_wrapped_text.first, m_cursor_pos);
+    edit_base(),
+    m_cursor_cord({0, 0}),
+    m_wrapped_text(),
+    m_update_wr(true),
+    m_update_cp(true) {
   }
 
   void multiline_edit::callback_handler(int input) {
@@ -200,18 +201,17 @@ namespace todo {
 #endif
 
     auto const& itvs = m_wrapped_text.first;
-    bool update_wr = false, update_cp = false;
     switch(input) {
       case CMDK_ARROW_LEFT:
         if (m_cursor_cord.scr_x >= 1) {
           m_cursor_cord.scr_x--;
-          update_cp = true;
+          m_update_cp = true;
         }
         break;
       case CMDK_ARROW_RIGHT:
         if (m_cursor_cord.scr_x < itvs.at(m_cursor_cord.scr_y).second - 1) {
           m_cursor_cord.scr_x++;
-          update_cp = true;
+          m_update_cp = true;
         }
         break;
       case CMDK_ARROW_UP:
@@ -219,7 +219,7 @@ namespace todo {
           m_cursor_cord.scr_y--;
           size_t size_x = itvs.at(m_cursor_cord.scr_y).second;
           m_cursor_cord.scr_x = MIN(m_cursor_cord.scr_x, size_x - 1);
-          update_cp = true;
+          m_update_cp = true;
         }
         break;
       case CMDK_ARROW_DOWN:
@@ -227,20 +227,20 @@ namespace todo {
           m_cursor_cord.scr_y++;
           size_t size_x = itvs.at(m_cursor_cord.scr_y).second;
           m_cursor_cord.scr_x = MIN(m_cursor_cord.scr_x, size_x - 1);
-          update_cp = true;
+          m_update_cp = true;
         }
         break;
       case CMDK_ENTER:
         add_char('\n');
-        update_wr = true;
+        m_update_wr = true;
         break;
       case CMDK_DELETE:
         del_char(true);
-        update_wr = true;
+        m_update_wr = true;
         break;
       case CMDK_BACKSPACE:
         del_char(false);
-        update_wr = true;
+        m_update_wr = true;
         break;
       case CMDK_ESCAPE:
         return_focus();
@@ -248,18 +248,9 @@ namespace todo {
       default:
         if(is_valid(input)) {
           add_char(input & 0xFF);
-          update_wr = true;
+          m_update_wr = true;
         }
         break;
-    }
-
-    if (update_cp)
-      m_cursor_pos = wrapped_pos(itvs, m_cursor_cord);
-
-    if (update_wr) {
-      size_t const size_x = m_end.scr_x - m_pos.scr_x - 1;
-      m_wrapped_text = multiline_edit::word_wrap(m_text, size_x);
-      m_cursor_cord = multiline_edit::wrapped_cords(m_wrapped_text.first, m_cursor_pos);
     }
 
     edit_base::callback_handler(input);
@@ -268,6 +259,18 @@ namespace todo {
   int multiline_edit::print(WINDOW * win) {
     // do not need to do anything if not visible
     if(!m_visible) return 0;
+
+    if (m_update_wr) {
+      size_t const size_x = m_end.scr_x - m_pos.scr_x - 1;
+      m_wrapped_text = word_wrap(m_text, size_x);
+      m_cursor_cord = wrapped_cords(m_wrapped_text.first, m_cursor_pos);
+      m_update_wr = false;
+    }
+
+    if (m_update_cp) {
+      m_cursor_pos = wrapped_pos(m_wrapped_text.first, m_cursor_cord);
+      m_update_cp = false;
+    }
 
     auto const& cuts = m_wrapped_text.first;
     auto const& disp_str = m_wrapped_text.second;

@@ -149,6 +149,8 @@ namespace todo {
     protected:
       td_screen_pos_t m_cursor_cord;
       wrapped_t       m_wrapped_text;
+      bool            m_update_wr;
+      bool            m_update_cp;
   };
 
 }; // namespace todo

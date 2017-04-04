@@ -110,14 +110,28 @@ namespace todo {
       (*--m_sel)->set_selected(true);
   }
 
-  void list::undo() {
-    if (m_sel != end())
-      (*m_sel)->set_selected(false);
+  bool list::undo() {
 
-    m_list = m_history.back();
-    m_sel = m_list.begin();
-    (*m_sel)->set_selected(true);
-    m_history.pop_back();
+    // anything left to undo?
+    if (!m_history.empty()) {
+
+      if (m_sel != end())
+        (*m_sel)->set_selected(false);
+
+      m_list = m_history.back();
+      m_sel = m_list.begin();
+
+      if (m_sel != end())
+        (*m_sel)->set_selected(true);
+
+      m_history.pop_back();
+      return true;
+    }
+    return false;
+  }
+
+  bool list::redo() {
+    return false; //TODO
   }
 
   void list::select_next() {
@@ -204,12 +218,16 @@ namespace todo {
       i->set_id(i_fheader.__id);
       add(i);
 
+
       delete [] name;
       delete [] comment;
     }
 
     // mid gets change due to constructor set after all items are created
     item::set_mid(l_fheader.__mid);
+
+    // clear history (created by adding the items)
+    m_history.clear();
 
     file.close();
     list::current_file = file_name;

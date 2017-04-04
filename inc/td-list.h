@@ -43,8 +43,8 @@ namespace todo {
       void add(item* i);
       void remove(item* i);
 
-      void undo();
-      void redo();
+      bool undo();
+      bool redo();
 
       void select_next();
       void select_prev();

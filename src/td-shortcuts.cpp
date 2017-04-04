@@ -1,127 +1,108 @@
-#include <td-cmd.h>
 #include <td-shortcuts.h>
 
-#include <assert.h>
-#include <list>
+#include <td-gui.h>
 
-namespace td_utils {
+namespace {
 
-//< if to forward input to shortcut function and trigger function
-#define FORWARD_INPUT 0xFF
-
-//< macors to define shortcut and shortcut function
-#define SHORTCUT_FUNC(name) int exec_shortcut_ ## name (todo::gui * gui, todo::list * list, int input)
-#define SHORTCUT(name, list, size) {(int[])list, size, 0, &exec_shortcut_ ## name }
-
-  SHORTCUT_FUNC(undo);
-  SHORTCUT_FUNC(del);
-  UNDO_FUNCTION(del);
-  SHORTCUT_FUNC(set_item);
-
-#define P99_PROTECT(...) __VA_ARGS__
-  todo_shc shortcuts[] = {
-    //< undo last command = "u"
-    SHORTCUT(undo, P99_PROTECT({ 0x75 }), 1),
-    //< delete selected item command = "dd"
-    SHORTCUT(del, P99_PROTECT({ 0x64, 0x64 }), 2),
-    //< set selected item state = "s{d,t,w}"
-    SHORTCUT(set_item, P99_PROTECT({ 0x73, FORWARD_INPUT }), 2)
-  };
-
-  //< count of shortcuts
-  const unsigned int shortcut_count = sizeof(shortcuts) / sizeof(shortcuts[0]);
-
-  /**
-   * @brief updates shortcuts if user input occurred
-   * @param[in]     input - new user input
-   * @param[in/out] gui   - pointer to todo gui
-   * @param[in/out] list  - pointer to todo list
-   */
-  void shortcut_update(int input, todo::gui * gui, todo::list * list) {
-    assert(gui && list);
-    for(unsigned int l = 0; l < shortcut_count; l++) {
-      if(shortcuts[l].shc_list[shortcuts[l].shc_index] == input ||
-          shortcuts[l].shc_list[shortcuts[l].shc_index] == FORWARD_INPUT) {
-        // new keyboard input did fit, increase index
-        if(++shortcuts[l].shc_index == shortcuts[l].shc_size) {
-          // execute shortcut function
-          shortcuts[l].execute(gui, list, input);
-          for(unsigned int m = 0; m < shortcut_count; m++)
-            shortcuts[m].shc_index = 0;
-        }
-      } else {
-        // new keyboard input did not fit, reset index
-        shortcuts[l].shc_index = 0;
-      }
-    }
+  const int shortcut_undo_list[] = { 0x75 };
+  void shortcut_undo(int input) {
+    (void)input;
+    auto& gui = ::todo::gui::get();
+    if (!gui.lst().undo())
+      gui.print_msg_u("Can not undo more...");
+    gui.update();
   }
 
-  int exec_shortcut_del(todo::gui * gui,
-      todo::list * list, int input __attribute__((unused)) ) {
-    assert(gui && list);
-    todo::item * item = list->get_selection();
+  const int shortcut_del_list[] = { 0x64, 0x64 };
+  void shortcut_del(int input) {
+    (void)input;
+    auto& gui = ::todo::gui::get();
+    auto item = gui.lst().get_selection();
     if(item) {
-      list->remove(list->get_selection());
-      g_executed.push_back(&undo_function_del);
-      gui->update();
-      gui->print_msg("Removed item...");
+      gui.lst().remove(item);
+      gui.print_msg_u("Removed item...");
     } else {
-      gui->print_msg("No item selected...");
+      gui.print_msg_u("No item selected...");
     }
-    return 0;
+    gui.update();
   }
 
-  int undo_function_del(todo::gui * gui, todo::list * list) {
-    assert(gui && list);
-    list->undo();
-    gui->update();
-    gui->print_msg("Restored item...");
-    return 0;
-  }
-
-  int exec_shortcut_undo(todo::gui * gui,
-      todo::list * list, int input __attribute__((unused)) ) {
-    assert(gui && list);
-    if(g_executed.empty()) {
-      gui->print_msg("Can not undo more...");
-      return 1;
-    }
-    undo_function u_f = g_executed.back();
-    if(u_f) {
-      // call undo function of last executed command
-      u_f(gui, list);
-      //remove last executed command from the list
-      g_executed.pop_back();
-    } else {
-      gui->print_msg("ERROR: Cannot undo last command!");
-      return -1;
-    }
-    return 0;
-  }
-
-  int exec_shortcut_set_item(todo::gui * gui, todo::list * list, int input) {
-    assert(gui && list);
-    todo::item * item = list->get_selection();
+  const int shortcut_set_item_list[] = { 0x73, ::todo::shortcut_handler::FWDINPUT };
+  void shortcut_set_item(int input) {
+    auto& gui = ::todo::gui::get();
+    auto item = gui.lst().get_selection();
     switch(input) {
       case 0x64: //'d'
-        item->set_state(todo::item::DONE);
-        gui->print_msg_u("Set item to DONE");
+        item->set_state(::todo::item::DONE);
+        gui.print_msg_u("Set item to DONE");
         break;
       case 0x74: //'t'
         item->set_state(todo::item::TODO);
-        gui->print_msg_u("Set item to TODO");
+        gui.print_msg_u("Set item to TODO");
         break;
       case 0x77: //'w'
         item->set_state(todo::item::WORK_IN_PRG);
-        gui->print_msg_u("Set item to WORK IN PROGRESS");
+        gui.print_msg_u("Set item to WORK IN PROGRESS");
         break;
       default:
-        gui->print_msg_u("Invalid command...");
-        return -1;
+        gui.print_msg_u("Invalid command...");
+        break;
     }
-    list->sort();
-    gui->update();
-    return 0;
+    gui.lst().sort();
+    gui.update();
+  }
+};
+
+namespace todo {
+
+  #define _SHCL(name) shortcut_ ## name ##_list
+  #define SHC(name) { _SHCL(name), (sizeof(_SHCL(name)) / sizeof(_SHCL(name)[0])), 0, &shortcut_ ##name }
+  shortcut_handler shortcut_handler::m_instance = shortcut_handler::shortcuts_t({
+    SHC(undo),
+    SHC(del),
+    SHC(set_item)
+  });
+  #undef _SHCL
+  #undef SHC
+
+  shortcut_handler::shortcut_handler(shortcuts_t && shcs):
+    m_shortcuts(std::forward<shortcuts_t>(shcs)) {
+    /* nothing todo */
   }
 
-}; // namespace td_utils
+  shortcut_handler::~shortcut_handler() {
+    /* nothing todo */
+  }
+
+  shortcut_handler& shortcut_handler::get() {
+    return shortcut_handler::m_instance;
+  }
+
+  void shortcut_handler::update(int input) {
+
+    for (auto& it : m_shortcuts) {
+
+      // check if new input matches next entry in list
+      if (it.list[it.idx] == input || it.list[it.idx] == FWDINPUT) {
+
+        // input matches, check if end is reached
+        if (++it.idx == it.size) {
+
+          // end reached, execute function
+          it.execute(input);
+
+          // reset all shortcuts
+          for (auto& _it : m_shortcuts)
+            _it.idx = 0;
+        }
+      } else {
+
+        // input did not match, reset the shortcut
+        it.idx = 0;
+
+      }
+    }
+
+  }
+
+}; // namespace todo

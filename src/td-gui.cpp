@@ -8,9 +8,9 @@ class gui_edit_submit_exception : public todo::exception {
   public:
     virtual void handle(todo::widget * handler) const {
       // get gui and edit
-      todo::gui * gui = dynamic_cast<todo::gui*>(handler);
-      todo::edit * edit = dynamic_cast<todo::edit*>(m_notifier);
-      td_utils::execute_cmdline(edit->get_text(), gui, &gui->lst());
+      ::todo::gui * gui = dynamic_cast<::todo::gui*>(handler);
+      ::todo::edit * edit = dynamic_cast<::todo::edit*>(m_notifier);
+      ::todo::command_line::get().execute(edit->get_text());
       // edit has done its job hide it again
       edit->clear();
       edit->print(stdscr);
@@ -123,7 +123,7 @@ namespace todo {
         m_list.expand_selected(true);
         set_focus(m_list.get_selection());
       default:
-        td_utils::shortcut_update(input, this, &m_list);
+        ::todo::shortcut_handler::get().update(input);
         break;
     }
 
@@ -172,6 +172,8 @@ namespace todo {
     int max_row, max_col;
     getmaxyx(stdscr, max_row, max_col);
     curs_set(0);
+    move(max_row-1, 0);
+    clrtoeol();
     mvprintw(max_row-1, 0, "%s", msg.c_str());
   }
 

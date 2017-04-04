@@ -1,40 +1,53 @@
 #ifndef TODO_CMD_HH
 #define TODO_CMD_HH
 
-#include <td-gui.h>
-#include <td-list.h>
+#include <map>
+#include <vector>
 
-namespace td_utils {
+namespace todo {
 
-//< macro to define a undo function
-#define UNDO_FUNCTION(name) int undo_function_ ## name (todo::gui * gui, todo::list * list)
+  class command_line {
+    public:
 
-  //< typedef of undo function
-  typedef int (*undo_function)(todo::gui * gui, todo::list * list);
+      typedef std::vector<std::string>            args_t;
 
-  //< list of undo function from exectued commands
-  extern std::list<undo_function> g_executed;
+      typedef struct {
+        const char * cmd_str;            //< the actual command
+        const char * doc_str;            //< documentation of command
+        int (*execute)(args_t const& a); //< function to execute
+      } command;
 
+      typedef std::map<std::string, command>      commands_t;
+      typedef typename commands_t::const_iterator const_iterator;
 
-  /**
-   * @brief todo command line
-   */
-  //TODO add aliases for commands
-  typedef struct {
-    const char * cmdline_cmd;                //< the actual command
-    int (*cmdline_execute)(void * params[]); //< function to execute
-    const char * cmdline_args;               //< defines argument list of cmd
-    const char * cmdline_doc;                //< documentation of command
-  } todo_cmdline;
+    private:
+      command_line(commands_t && cmds);
+      virtual ~command_line();
 
-  /**
-   * @brief executes command line string
-   * @param[in]     cmdline - command line string to execute
-   * @param[in/out] gui     - pointer to the todo gui
-   * @param[in/out] list    - pointer to the todo list
-   */
-  void execute_cmdline(const std::string & cmdline, todo::gui * gui,
-      todo::list * list);
+      command_line() = delete;
+      command_line(command_line const&) = default;
+      command_line(command_line &&) = default;
+
+      ///< singleton instance
+      static command_line m_instance;
+
+    public:
+      static command_line& get();
+
+    public:
+
+      inline const_iterator begin() const { return m_commands.begin(); }
+      inline const_iterator end() const { return m_commands.end(); }
+
+      /**
+       * @brief executes command line string
+       * @param[in] cmdline - command line string to execute
+       */
+      int execute(std::string const& cmdline);
+
+    private:
+      commands_t m_commands;
+  };
 
 }; // namespace todo
 

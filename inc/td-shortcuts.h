@@ -1,30 +1,59 @@
 #ifndef TODO_SHORTCUTS_HH
 #define TODO_SHORTCUTS_HH
 
-#include <td-gui.h>
-#include <td-list.h>
+#include <vector>
 
-namespace td_utils {
+namespace todo {
 
-  /**
-   * @brief todo shortcut
-   */
-  typedef struct {
-    int * shc_list;          //< list of input characters for shortcut
-    unsigned int shc_size;   //< size of shortcut list
-    unsigned int shc_index;  //< current index in list
-    //< function to exectute when shortcut is triggered
-    int (*execute)(todo::gui * gui, todo::list * list, int input);
-  } todo_shc;
+  class shortcut_handler {
+    public:
+      typedef struct {
+        ///< list of input characters for shortcut
+        const int*    list;
 
-  /**
-   * @brief updates shortcuts if user input occurred
-   * @param[in]     input - new user input
-   * @param[in/out] gui   - pointer to todo gui
-   * @param[in/out] list  - pointer to todo list
-   */
-  void shortcut_update(int input, todo::gui * gui, todo::list * list);
+        ///< size of the shortcut list
+        size_t const  size;
 
-}; // namespace td_utils
+        ///< current index in the list
+        size_t        idx;
+
+        ///< function to exectute when shortcut is triggered
+        void (*execute)(int input);
+      } shortcut;
+
+      ///< define shortcuts type
+      typedef std::vector<shortcut>                 shortcuts_t;
+      typedef typename shortcuts_t::const_iterator  const_iterator;
+
+      ///< define special input characters
+      static int const TERMINPUT  = 0x00;
+      static int const FWDINPUT   = 0xff;
+
+    private:
+      shortcut_handler(shortcuts_t && shcs);
+      virtual ~shortcut_handler();
+
+      shortcut_handler() = delete;
+      shortcut_handler(shortcut_handler const&) = default;
+      shortcut_handler(shortcut_handler &&) = default;
+
+      ///< singleton instance
+      static shortcut_handler m_instance;
+
+    public:
+      static shortcut_handler& get();
+
+    public:
+
+      inline const_iterator begin() const { return m_shortcuts.begin(); }
+      inline const_iterator end() const { return m_shortcuts.end(); }
+
+      void update(int input);
+
+    private:
+      shortcuts_t m_shortcuts;
+  };
+
+}; // namespace todo
 
 #endif // #ifndef TODO_SHORTCUTS_HH

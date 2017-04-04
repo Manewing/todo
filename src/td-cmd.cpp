@@ -1,233 +1,142 @@
 #include <td-cmd.h>
 
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-#include <list>
+#include <td-gui.h>
+#include <td-utils.h>
 
-namespace td_utils {
+namespace {
 
-  //< list of undo function from exectued commands
-  std::list<undo_function> g_executed;
-
-//< macros to define command line function and command
-#define CMDLINE_FUNC(func) int cmdline_ ## func (void * params[])
-#define CMDLINE_CMD(func, params, help) {#func, &cmdline_ ## func, params, help}
-
-  //< all functions for command line commands
-  CMDLINE_FUNC(help);
-  CMDLINE_FUNC(s);
-  CMDLINE_FUNC(w);
-  CMDLINE_FUNC(sortby);
-  CMDLINE_FUNC(add);
-  CMDLINE_FUNC(q);
-
-  //< all command line commands
-  todo_cmdline cmdline_cmds[] = {
-    CMDLINE_CMD(help, "g", "Displays this screen, help <cmd> for detailed information"),
-    CMDLINE_CMD(s, "sgl", "Saves todo list to file"),
-    CMDLINE_CMD(w, "sgl", "Save todo list to file"), //TODO make alias
-    CMDLINE_CMD(sortby, "sl", "Select sort mode for todo list"),
-    CMDLINE_CMD(add, "sl", "Adds item to todo list"),
-    CMDLINE_CMD(q, "g", "Quit")
-  };
-
-  //< count of command line commands
-  const unsigned int cmdline_cmds_count = sizeof(cmdline_cmds) / sizeof(cmdline_cmds[0]);
-
-  static char * g_parse_str = NULL;
-  static unsigned int g_parse_index = 0;
-  static unsigned int g_parse_lm = 0;
-
-  int check_in_parse_cmdline(char c, const char * str, unsigned int str_l) {
-    assert(str && str_l);
-    for(unsigned int l = 0; l < str_l; l++) {
-      if(str[l] == c)
-        return true;
-    }
-    return false;
+  const char* cmdline_help_doc =  "Displays this screen, help <cmd> for detailed information";
+  int cmdline_help(::todo::command_line::args_t const& args) {
+    (void)args;
+    ::todo::gui::get().print_msg_u("HERE SHOULD BE THE HELP SCREEN");
+    return 0;
   }
 
-  char * parse_cmdline(const char * cmd, const char * delim, const char * cmb, int *valid) {
-    assert(delim && cmb);
-    *valid = 1;
-    if(cmd) {
-      free(g_parse_str);
-      unsigned int cmd_length = strlen(cmd);
-      unsigned int delim_length = strlen(delim);
-      unsigned int cmb_length = strlen(cmb);
-      assert(cmd_length);
-      g_parse_str = (char*)malloc(cmd_length);
-      memcpy(g_parse_str, cmd, cmd_length+1);
-      g_parse_lm = cmd_length;
-      g_parse_str[cmd_length] = 0;
-      g_parse_index = 0;
-      //parse
-      for(unsigned int l = 0; l < cmd_length; l++) {
-        if(check_in_parse_cmdline(cmd[l], cmb, cmb_length)) {
-          //found combine section
-          g_parse_str[l] = 0;
-          //search for end
-          bool end_found = false;
-          for(unsigned int m = l+1; m < cmd_length; m++) {
-            if(check_in_parse_cmdline(cmd[m], cmb, cmb_length)) {
-              //found end
-              end_found = true;
-              g_parse_str[m] = 0;
-              l = m; //next offset (+1 => l++)
-              break;
-            }
-          }
-          if(end_found == false) {
-            //invalid combine
-            *valid = 0;
-            return NULL;
-          }
-        } else if(check_in_parse_cmdline(cmd[l], delim, delim_length)) {
-          g_parse_str[l] = 0;
-        }
-      }
-    }
-    while(g_parse_str[g_parse_index] == 0 && g_parse_index < g_parse_lm)
-      g_parse_index++;
-    if(g_parse_index >= g_parse_lm)
-      return NULL;
-    char * ptr =  g_parse_str + g_parse_index;
-    g_parse_index += strlen(g_parse_str+g_parse_index);
-    return ptr;
+  const char* cmdline_save_doc = "Save todo list to file";
+  int cmdline_save(::todo::command_line::args_t const& args) {
+    auto& gui = ::todo::gui::get();
+    auto& lst = gui.lst();
+
+    // get filename
+    auto filename = args.size() == 2 ? args[1] : ::todo::list::current_file;
+
+    std::string message;
+    if(lst.save(filename))
+      message = "Saved to file: ";
+    else
+      message = "Could not save: ";
+    message += filename;
+    gui.print_msg_u(message);
+    return 0;
+  }
+
+  const char* cmdline_sortby_doc = "Select sort mode for todo list";
+  int cmdline_sortby(::todo::command_line::args_t const& args) {
+    if (args.size() != 2)
+      return 3;
+
+    // get mode from command line
+    auto const& mode = args[2];
+
+    if(mode == "id")
+      ::todo::item::sort_mode(::todo::item::ID);
+    else if(mode == "state" || mode == "st")
+      ::todo::item::sort_mode(::todo::item::STATE);
+    else if(mode == "priority" || mode == "pr")
+      ::todo::item::sort_mode(::todo::item::PRIORITY);
+    else if(mode == "name" || mode == "nm")
+      ::todo::item::sort_mode(::todo::item::NAME);
+    ::todo::gui::get().lst().sort();
+    return 0;
+  }
+
+  const char* cmdline_add_doc = "Adds item to todo list";
+  int cmdline_add(::todo::command_line::args_t const& args) {
+    if (args.size() != 2)
+      return 3;
+
+    // create and add new item
+    ::todo::item* new_item = new ::todo::item(args[1], "(empty)");
+    ::todo::gui::get().lst().add(new_item);
+
+    return 0;
+  }
+
+  const char* cmdline_quit_doc = "Quit";
+  int cmdline_quit(::todo::command_line::args_t const& args) {
+    (void)args;
+    ::todo::gui::get().quit();
+    return 0;
+  }
+
+
+};
+
+namespace todo {
+
+  #define CMD(name) { #name, {#name, cmdline_ ##name ##_doc, &cmdline_ ##name } }
+  #define ACMD(alias, name) { #alias, { #alias, cmdline_ ##name ##_doc, &cmdline_ ##name } }
+  command_line command_line::m_instance = command_line::commands_t ({
+      CMD(help),
+      CMD(save),
+      ACMD(s, save),
+      ACMD(w, save),
+      ACMD(write, save),
+      CMD(sortby),
+      CMD(add),
+      ACMD(a, add),
+      CMD(quit),
+      ACMD(q, quit)
+  });
+  #undef ACMD
+  #undef CMD
+
+  command_line::command_line(commands_t && cmds):
+    m_commands(std::forward<commands_t>(cmds)) {
+    /* nothing todo */
+  }
+
+  command_line::~command_line() {
+    /* nothing todo */
+  }
+
+  command_line& command_line::get() {
+    return command_line::m_instance;
   }
 
   /**
    * @brief executes command line string
    * @param[in]     cmdline - command line string to execute
-   * @param[in/out] gui     - pointer to the todo gui
-   * @param[in/out] list    - pointer to the todo list
    */
-  void execute_cmdline(const std::string & cmdline, todo::gui * gui,
-      todo::list * list) {
-    if(cmdline.length() == 0)
-      return;
-    const char * delim = " \n.:,;";
-    int valid = 1;
-    char * ptr = parse_cmdline(cmdline.c_str(), delim, "\"", &valid);
-    if(ptr == NULL) { // could not parse command line -> invalid
-      gui->print_msg_u("Invalid expression...");
-      return;
+  int command_line::execute(std::string const& cmdline) {
+    if(!cmdline.length()) return 0;
+
+    std::vector<std::string> splitted;
+    try {
+      // try to parse the command line string
+      splitted = ::todo::utils::split_quoted(cmdline);
+    } catch (std::out_of_range const& oor) {
+      // could not parse command line
+      (void)oor;
+      ::todo::gui::get().print_msg_u("Invalid expression...");
+      return 1;
     }
 
-    todo_cmdline * cl = NULL;
-    for(unsigned int l = 0; l < cmdline_cmds_count; l++) {
-      if(strcmp(cmdline_cmds[l].cmdline_cmd, ptr) == 0) {
-        cl = &cmdline_cmds[l];
-        break;
-      }
+    // get command string
+    auto const& cmd_str = splitted[0];
+
+    // get command
+    if (m_commands.find(cmd_str.c_str()) == end()) {
+      // not found
+      std::string msg = "Invalid command: ";
+      msg += cmd_str;
+      ::todo::gui::get().print_msg_u(msg);
+      return 2;
     }
-    if(cl == NULL) { // invalid command line
-      gui->print_msg_u("Invalid command...");
-      return;
-    }
-    int argc = strlen(cl->cmdline_args);
-    void ** params = NULL;
-    if(argc != 0) {
-      params = (void**)malloc(sizeof(void*) * (argc + 1));
-      int argi = 0;
-      while(argi < argc) {
-        switch(cl->cmdline_args[argi]) {
-          case 's':
-            params[argi] = parse_cmdline(NULL, delim, "\"", &valid);
-            if(valid == 0)
-              goto error_free;
-            break;
-          case 'g':
-            params[argi] = gui;
-            break;
-          case 'l':
-            params[argi] = list;
-            break;
-          default:
-            assert(0);
-            break;
-        }
-        argi++;
-      }
-      params[argc] = NULL;
-    }
-    if(cl->cmdline_execute(params) != 0)
-      gui->print_msg_u("Invalid command or missing parameter...");
-error_free:
-    free(params);
+    auto const& cl = m_commands[cmd_str.c_str()];
+
+    // execute command
+    return cl.execute(splitted);
   }
 
-  int cmdline_help(void * params[]) {
-    if(!params)
-      return -1;
-    if(!params[0])
-      return -1;
-    todo::gui * gui = (todo::gui*)params[0];
-    gui->print_msg_u("HERE SHOULD BE THE HELP SCREEN");
-    return 0;
-  }
-
-  int cmdline_s(void * params[]) {
-    if(!params)
-      return -1;
-    if(!(params[1] && params[2]))
-      return -1;
-    const char * filename = (params[0] == NULL) ?
-      todo::list::current_file.c_str() : static_cast<const char*>(params[0]);
-    todo::gui * gui = static_cast<todo::gui*>(params[1]);
-    todo::list * list = static_cast<todo::list*>(params[2]);
-    std::string message;
-    if(list->save(filename))
-      message = "Saved to file: ";
-    else
-      message = "Could not save: ";
-    message += filename;
-    gui->print_msg_u(message);
-    return 0;
-  }
-
-  int cmdline_sortby(void * params[]) {
-    if(!params)
-      return -1;
-    if(!(params[0] && params[1]))
-      return -1;
-    const char * mode = (const char *)params[0];
-    todo::list * list = (todo::list*)params[1];
-    if(strcmp(mode, "id") == 0)
-      todo::item::sort_mode(todo::item::ID);
-    else if(strcmp(mode, "state") == 0 || strcmp(mode, "st") == 0)
-      todo::item::sort_mode(todo::item::STATE);
-    else if(strcmp(mode, "priority") == 0 || strcmp(mode, "pr") == 0)
-      todo::item::sort_mode(todo::item::PRIORITY);
-    else if(strcmp(mode, "name") == 0 || strcmp(mode, "nm") == 0)
-      todo::item::sort_mode(todo::item::NAME);
-    list->sort();
-    return 0;
-  }
-
-  int cmdline_w(void * params[]) {
-    return cmdline_s(params);
-  }
-
-  int cmdline_add(void * params[]) {
-    if(!params)
-      return -1;
-    if(!(params[0] && params[1]))
-      return -1;
-    const char * item_name = (const char *)params[0];
-    todo::list * list = (todo::list *)params[1];
-    todo::item* new_item = new todo::item(item_name, "(empty)");
-    list->add(new_item);
-    return 0;
-  }
-
-  int cmdline_q(void * params[]) {
-    if(!params || !params[0])
-      return -1;
-    todo::gui * gui = static_cast<todo::gui*>(params[0]);
-    gui->quit();
-    return 0;
-  }
-
-}; // namespace td_utils
+}; // namespace todo

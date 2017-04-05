@@ -22,7 +22,7 @@ namespace todo {
 
       virtual int print(WINDOW * win) = 0;
 
-      virtual void    set_focus(widget * widget);
+      virtual void    set_focus(widget * widget = NULL);
       inline widget*  get_focus() const { return m_focus; }
       inline bool     has_focus() const { return m_focus == this; }
 

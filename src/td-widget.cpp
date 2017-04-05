@@ -44,10 +44,12 @@ namespace todo {
 
   void widget::set_focus(widget * w) {
     m_focus = (w == NULL ? this : w);
-    try {
-      callback(CMDK_TRIGGERED);
-    } catch (exception * except) {
-      except->handle(this);
+    if (w) {
+      try {
+        callback(CMDK_TRIGGERED);
+      } catch (exception * except) {
+        except->handle(this);
+      }
     }
   }
 

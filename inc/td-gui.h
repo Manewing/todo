@@ -40,7 +40,6 @@ namespace todo {
 
       virtual int print(WINDOW * win = stdscr);
 
-      void print_msg(std::string msg);
       void print_msg_u(std::string msg) { m_msg_u = msg; }
 
       inline void quit() { m_quit = true; }

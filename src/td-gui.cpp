@@ -11,12 +11,13 @@ class gui_edit_submit_exception : public todo::exception {
       ::todo::gui * gui = dynamic_cast<::todo::gui*>(handler);
       ::todo::edit * edit = dynamic_cast<::todo::edit*>(m_notifier);
       ::todo::command_line::get().execute(edit->get_text());
+
       // edit has done its job hide it again
       edit->clear();
-      edit->print(stdscr);
       edit->visible(false);
+
       //update gui
-      gui->set_focus(NULL);
+      gui->set_focus();
       gui->update();
     }
 };
@@ -103,6 +104,11 @@ namespace todo {
   void gui::callback_handler(int input) {
     widget::log_debug("gui", "in callback_handler");
     switch(input) {
+      case CMDK_TRIGGERED:
+        // focus return to gui
+        m_cmdline_edit.clear();
+        m_cmdline_edit.visible(false);
+        break;
       case CMDK_START_CMD:
         m_cmdline_edit.visible(true);
         set_focus(&m_cmdline_edit);
@@ -131,7 +137,7 @@ namespace todo {
   }
 
   void gui::return_focus() {
-    m_focus = NULL;
+    m_focus = this;
   }
 
   void gui::update() {
@@ -152,13 +158,19 @@ namespace todo {
     m_list.set_pos(win, {0, 2}, { -1, max_row - 1});
     m_list.print(win);
 
-    // print command line
-    m_cmdline_edit.print(win);
+    // clear last line
+    curs_set(0);
+    move(max_row-1, 0);
+    clrtoeol();
 
     // print message
-    if (m_msg_u.size())
-      print_msg(m_msg_u);
-    m_msg_u = "";
+    if (m_msg_u.size()) {
+      mvprintw(max_row-1, 0, "%s", m_msg_u.c_str());
+      m_msg_u = "";
+    }
+
+    // print command line
+    m_cmdline_edit.print(win);
 
     curs_set(1);
     move(gui::cursor_pos.scr_y, gui::cursor_pos.scr_x);
@@ -166,15 +178,6 @@ namespace todo {
     gui::cursor_pos.scr_y = max_row - 1;
 
     return 0;
-  }
-
-  void gui::print_msg(std::string msg) { //TODO colored?
-    int max_row, max_col;
-    getmaxyx(stdscr, max_row, max_col);
-    curs_set(0);
-    move(max_row-1, 0);
-    clrtoeol();
-    mvprintw(max_row-1, 0, "%s", msg.c_str());
   }
 
 }; // namespace todo

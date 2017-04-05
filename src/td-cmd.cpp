@@ -20,13 +20,9 @@ namespace {
     // get filename
     auto filename = args.size() == 2 ? args[1] : ::todo::list::current_file;
 
-    std::string message;
-    if(lst.save(filename))
-      message = "Saved to file: ";
-    else
-      message = "Could not save: ";
-    message += filename;
-    gui.print_msg_u(message);
+    bool res = lst.save(filename);
+    gui.print_msg_u("%s: %s", (res ? "Saved to file: " : "Could not save"),
+        filename.c_str());
     return 0;
   }
 
@@ -118,7 +114,7 @@ namespace todo {
     } catch (std::out_of_range const& oor) {
       // could not parse command line
       (void)oor;
-      ::todo::gui::get().print_msg_u("Invalid expression...");
+      ::todo::gui::get().print_msg_u("Invalid expression: %s", cmdline.c_str());
       return 1;
     }
 
@@ -128,9 +124,7 @@ namespace todo {
     // get command
     if (m_commands.find(cmd_str.c_str()) == end()) {
       // not found
-      std::string msg = "Invalid command: ";
-      msg += cmd_str;
-      ::todo::gui::get().print_msg_u(msg);
+      ::todo::gui::get().print_msg_u("Invalid command: %s", cmd_str.c_str());
       return 2;
     }
     auto const& cl = m_commands[cmd_str.c_str()];

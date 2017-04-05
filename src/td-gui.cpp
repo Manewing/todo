@@ -128,6 +128,7 @@ namespace todo {
       case CMDK_EDIT:
         m_list.expand_selected(true);
         set_focus(m_list.get_selection());
+        break;
       default:
         ::todo::shortcut_handler::get().update(input);
         break;

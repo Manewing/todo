@@ -10,7 +10,6 @@ namespace {
     auto& gui = ::todo::gui::get();
     if (!gui.lst().undo())
       gui.print_msg_u("Can not undo more...");
-    gui.update();
   }
 
   const int shortcut_del_list[] = { 0x64, 0x64 };
@@ -24,7 +23,6 @@ namespace {
     } else {
       gui.print_msg_u("No item selected...");
     }
-    gui.update();
   }
 
   const int shortcut_set_item_list[] = { 0x73, ::todo::shortcut_handler::FWDINPUT };
@@ -49,7 +47,6 @@ namespace {
         break;
     }
     gui.lst().sort();
-    gui.update();
   }
 };
 

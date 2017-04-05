@@ -7,6 +7,7 @@
 #include "td-widget.h"
 #include "td-edit.h"
 #include "td-list.h"
+#include "td-utils.h"
 
 namespace todo {
 
@@ -40,7 +41,10 @@ namespace todo {
 
       virtual int print(WINDOW * win = stdscr);
 
-      void print_msg_u(std::string msg) { m_msg_u = msg; }
+      template <typename ... Args>
+      inline void print_msg_u(const char* fmt, Args ... args) {
+        m_msg_u = ::todo::utils::format(fmt, args ...);
+      }
 
       inline void quit() { m_quit = true; }
       inline bool is_running() const { return !m_quit; }

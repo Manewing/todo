@@ -26,7 +26,7 @@ TESTSDIR :=tests
 DEFINES  :=
 INCLUDE  := -I $(INCDIR)
 LIBS     :=-lncurses
-WARNING  :=-Wall
+WARNING  :=-Wall -Wextra -Wformat=0
 
 CPP:=g++
 CC :=gcc
@@ -42,8 +42,8 @@ C_EXT  :=c
 CPP_FLAGS:=-std=c++14 $(GFLAG) $(WARNING)
 C_FLAGS  :=$(GFLAG) $(WARNING)
 
-TESTS_SRC:=$(wildcard $(TESTSDIR)/*.$(CPP_EXT))
-TESTS    :=$(patsubst %.$(CPP_EXT),%,$(TESTS_SRC))
+#TESTS_SRC:=$(wildcard $(TESTSDIR)/*.$(CPP_EXT))
+#TESTS    :=$(patsubst %.$(CPP_EXT),%,$(TESTS_SRC))
 
 CPP_SRC  :=$(wildcard $(SRCDIR)/*.$(CPP_EXT))
 C_SRC    :=$(wildcard $(SRCDIR)/*.$(C_EXT))

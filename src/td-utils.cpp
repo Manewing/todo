@@ -24,7 +24,11 @@ namespace todo {
         }
         pos++;
       }
-      splitted.push_back(str.substr(last, pos - last));
+
+      //add leftover
+      if (last != pos)
+        splitted.push_back(str.substr(last, pos - last));
+
       return splitted;
     }
 

@@ -2,6 +2,7 @@
 #define TODO_SHORTCUTS_HH
 
 #include <vector>
+#include <stdlib.h>
 
 namespace todo {
 

@@ -164,17 +164,15 @@ namespace todo {
     // do not need to do anything if not visible
     if(!m_visible) return 0;
 
-    std::string str = m_prefix + m_text + " ";
+    std::string str = m_prefix + m_text;
     const int size_x = m_end.scr_x - m_pos.scr_x - 1;
 
     unsigned int actual_cursor_pos = m_cursor_pos + m_prefix.length() + 1;
     int start_pos = ((int)actual_cursor_pos - size_x) > 0 ?
       ((int)actual_cursor_pos - size_x) : 0;
 
-    // clear line TODO check for better way!
     wmove(win, m_pos.scr_y, m_pos.scr_x);
-    for(int l = 0; l < size_x; l++)
-      waddch(win, ' ');
+    clrtoeol();
 
     mvwaddnstr(win, m_pos.scr_y, m_pos.scr_x, str.c_str() + start_pos, size_x);
     if (has_focus()) {

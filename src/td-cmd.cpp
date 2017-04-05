@@ -36,7 +36,7 @@ namespace {
       return 3;
 
     // get mode from command line
-    auto const& mode = args[2];
+    auto const& mode = args[1];
 
     if(mode == "id")
       ::todo::item::sort_mode(::todo::item::ID);

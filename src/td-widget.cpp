@@ -3,10 +3,6 @@
 #include "td-defs.h"
 #include "td-except.h"
 
-#include <iostream>
-
-#include "sys-utils.h"
-
 namespace todo {
 
   void widget_fu::handle(widget * handler) const {
@@ -21,11 +17,9 @@ namespace todo {
     m_focus(NULL),
     m_fu() {
     if(access_counter++ == 0) {
-      std::string log_file_path = get_home_directory();
-      log_file_path += "/";
-      log_file_path += widget::log_file_name;
-
-      log_file.open(log_file_path.c_str(), std::ios_base::out);
+      log_file.open( ::todo::utils::get_path(
+              widget::log_file_name, ::todo::utils::get_homedir()
+            ), std::ios_base::out);
     }
   }
 

@@ -12,6 +12,10 @@ namespace todo {
 
   namespace utils {
 
+    std::string get_homedir();
+    std::string get_path(std::string const& dir, std::string const& file);
+    bool file_exists(std::string const& path);
+
     /*
      * \brief Splits string \p str respecting quotes.
      *

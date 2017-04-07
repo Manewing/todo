@@ -1,8 +1,34 @@
 #include <td-utils.h>
 
+#include <pwd.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <sys/types.h>
+
 namespace todo {
 
   namespace utils {
+
+    std::string get_homedir() {
+      uid_t uid = getuid();
+      struct passwd * pw = getpwuid(uid);
+      if (!pw)
+        return ""; // use local dir
+      return pw->pw_dir;
+    }
+
+    std::string get_path(std::string const& dir, std::string const& file) {
+      std::string path;
+      path.reserve(dir.size() + file.size() + 1);
+      path = dir;
+      path.push_back('/');
+      path += file;
+      return path;
+    }
+
+    bool file_exists(std::string const& path) {
+      return access(path.c_str(), F_OK) != -1;
+    }
 
     std::vector<std::string> split_quoted(std::string const& str) {
       std::vector<std::string> splitted;

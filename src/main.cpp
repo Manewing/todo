@@ -1,48 +1,42 @@
 #include <iostream>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include <ncurses.h>
-
-#include <assert.h>
 
 #include "td-gui.h"
 
-#include "sys-utils.h"
-
-
 int main(int argc, char * argv[]) {
   int input;
-  char * path;
-  const char * homedir;
+  std::string path, homedir;
 
-  //TODO
-  homedir = get_home_directory();
-  if(!homedir) {
+  // get home directory
+  homedir = ::todo::utils::get_homedir();
+  if(homedir.length() == 0) {
     std::cerr << "error: could not get home directory" << std::endl;
     return -1;
   }
 
-  path = get_path(homedir, todo::list::default_filename.c_str());
-  if(!path) {
-    std::cerr << "error: could not get path to file: " << todo::list::default_filename
-              << " in " << homedir << std::endl;
-    return -1;
+  // get path to default todo list file
+  path = ::todo::utils::get_path(homedir, ::todo::list::default_filename);
+
+  // check if default file already exists
+  if(!::todo::utils::file_exists(path)) {
+    std::cerr << "creating new file: " << path << std::endl;
+
+    // set current path
+    ::todo::list::current_file = path;
+
+    // just write empty list to file
+    ::todo::list lst;
+    lst.save(path);
   }
 
-  if(!file_exists(path)) {
-    //TODO
-    std::cerr << "file: " << path << " does not exist, TODO create new" << std::endl;
-    todo::list::current_file = path;
-  }
-
+  // TODO: argparsing
   if (argc == 2) {
-    if (!file_exists(argv[1])) {
+    if (!::todo::utils::file_exists(argv[1])) {
       std::cout << argv[0] << ": can not open: " << argv[1] << std::endl;
       return -1;
     }
 
-    path = strdup(argv[1]);
+    path = argv[1];
   }
 
   todo::gui& gui = todo::gui::get();
@@ -56,5 +50,4 @@ int main(int argc, char * argv[]) {
   }
 
   todo::gui::free();
-  free(path);
 }

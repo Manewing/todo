@@ -5,6 +5,7 @@
 #include <fstream>
 
 #include "td-except.h"
+#include "td-utils.h"
 
 namespace todo {
 
@@ -14,6 +15,9 @@ namespace todo {
   };
 
   class widget {
+    public:
+      static constexpr const char* log_file_name = ".td.log";
+
     public:
       widget();
       virtual ~widget();
@@ -33,16 +37,44 @@ namespace todo {
       virtual void call_focus(int input);
       virtual void callback(int input);
 
-      //TODO change logging system
-      void log(std::string type, std::string id, std::string msg);
-      void log_error(std::string id, std::string msg);
-      void log_debug(std::string id, std::string msg);
+      template <typename ... Args>
+      inline void log_error(std::string id,
+                            const char* fmt,
+                            Args ... args) {
+        widget::log("ERROR", id, ::todo::utils::format(fmt, args ...));
+      }
 
-      static void static_log(std::string type, std::string id, std::string msg);
-      static void static_log_error(std::string id, std::string msg);
-      static void static_log_debug(std::string id, std::string msg);
+      template <typename ... Args>
+      inline void log_debug(__dbg std::string id,
+                            __dbg const char* fmt,
+                            __dbg Args ... args) {
+        #ifdef TD_DEBUG
+        widget::log("DEBUG", id, ::todo::utils::format(fmt, args ...));
+        #endif // #ifdef TD_DEBUG
+      }
+
+      template <typename ... Args>
+      inline static void static_log_error(std::string id,
+                                          const char* fmt,
+                                          Args ... args) {
+        widget::static_log("ERROR", id, ::todo::utils::format(fmt, args ...));
+      }
+
+      template <typename ... Args>
+      inline static void static_log_debug(__dbg std::string id,
+                                          __dbg const char* fmt,
+                                          __dbg Args ... args) {
+        #ifdef TD_DEBUG
+        widget::static_log("DEBUG", id, ::todo::utils::format(fmt, args ...));
+        #endif // #ifdef TD_DEBUG
+      }
 
     private:
+      void log(const char* type, std::string id, std::string msg);
+      static void static_log(const char* type, std::string id, std::string msg);
+
+    private:
+      static int           access_counter;
       static std::ofstream log_file;
 
     protected:

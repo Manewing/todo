@@ -59,9 +59,7 @@ namespace todo {
   }
 
   void item::callback(int input) {
-#ifdef TD_DEBUG
     widget::log_debug("item", "in callback");
-#endif
     m_text_edit.callback(input);
   }
 

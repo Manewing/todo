@@ -5,34 +5,27 @@
 
 #include <iostream>
 
-//debug TODO remove
-#include <sstream>
-
 #include "sys-utils.h"
 
 namespace todo {
 
   void widget_fu::handle(widget * handler) const {
-    std::stringstream ss;
-    ss << "handler: " << handler;
-    widget::static_log_debug("focus update", ss.str());
+    widget::static_log_debug("focus update", "handler: %p", handler);
     handler->set_focus(handler);
   }
 
-  static unsigned int access_counter = 0;
+  int widget::access_counter = 0;
   std::ofstream widget::log_file;
 
   widget::widget():
     m_focus(NULL),
     m_fu() {
     if(access_counter++ == 0) {
-      std::string log_file_name = get_home_directory();
-#ifdef TD_DEBUG
-      log_file_name += "/td.log";
-#else
-      log_file_name += "/.td.log"; // TODO
-#endif
-      log_file.open(log_file_name.c_str(), std::ios_base::out);
+      std::string log_file_path = get_home_directory();
+      log_file_path += "/";
+      log_file_path += widget::log_file_name;
+
+      log_file.open(log_file_path.c_str(), std::ios_base::out);
     }
   }
 
@@ -59,11 +52,7 @@ namespace todo {
   }
 
   void widget::call_focus(int input) {
-#ifdef TD_DEBUG
-    std::stringstream ss;
-    ss << "to m_focus->callback(" << std::hex << input << ")";
-    widget::log_debug("widget", ss.str());
-#endif
+    widget::log_debug("widget", "to m_focus->callback(%x)", input);
     try {
       m_focus->callback(input);
     } catch (exception * except) {
@@ -75,41 +64,21 @@ namespace todo {
     if (m_focus == NULL)
       m_focus = this;
     if (m_focus == this) {
-#ifdef TD_DEBUG
-      std::stringstream ss;
-      ss << "callback -> callback_handler(" << input << ")";
-      widget::log_debug("widget", ss.str());
-#endif
+      widget::log_debug("widget", "callback -> callback_handler (%x)", input);
       this->callback_handler(input);
     } else {
       call_focus(input);
     }
   }
 
-  void widget::log(std::string type, std::string id, std::string msg) {
+  void widget::log(const char* type, std::string id, std::string msg) {
     widget::log_file << "[" << type << "]" << "(" << id << "=" << this << "): "
                      << msg << std::endl;
   }
 
-  void widget::log_error(std::string id, std::string msg) {
-    widget::log("ERROR", id, msg);
-  }
-
-  void widget::log_debug(std::string id, std::string msg) {
-    widget::log("DEBUG", id, msg);
-  }
-
-  void widget::static_log(std::string type, std::string id, std::string msg) {
+  void widget::static_log(const char* type, std::string id, std::string msg) {
     widget::log_file << "[" << type << "]" << "(" << id << "): "
                      << msg << std::endl;
-  }
-
-  void widget::static_log_error(std::string id, std::string msg) {
-    widget::static_log("ERROR", id, msg);
-  }
-
-  void widget::static_log_debug(std::string id, std::string msg) {
-    widget::static_log("DEBUG", id, msg);
   }
 
 }; // namespace todo

@@ -36,10 +36,10 @@ typedef struct {
 } td_screen_pos_t;
 #define TD_SCREEN_POS_INITIALIZER { 0, 0 }
 
-typedef struct {
-  void ** params;
-  unsigned int param_count;
-  void (*callback_wrapper)(void ** params);
-} td_callback_wrapper_t;
+#ifdef TD_DEBUG
+#define __dbg
+#else
+#define __dbg __attribute__((unused))
+#endif
 
 #endif // #ifndef TODO_DEFS_HH

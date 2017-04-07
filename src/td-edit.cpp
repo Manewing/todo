@@ -1,9 +1,6 @@
 #include "td-edit.h"
 #include "td-gui.h"
 
-#include <string.h>
-#include <sstream>
-
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 namespace todo {
@@ -34,12 +31,8 @@ namespace todo {
    * @param[in] input - the input to trigger callback
    */
   void edit_base::callback_handler(int input) {
-#ifdef TD_DEBUG
-    std::stringstream ss("");
-    ss << "in callback_hanlder: input:  0x" << std::hex
-       << input << ", " << std::dec << input << ", text: " << m_text;
-    widget::log_debug("edit_base", ss.str());
-#endif
+    widget::log_debug("edit_base", "in callback_handler: input: %x, text: %s",
+        input, m_text.c_str());
 
     // trigger callback if set
     if(m_callbacks[input])
@@ -191,9 +184,7 @@ namespace todo {
   }
 
   void multiline_edit::callback_handler(int input) {
-#ifdef TD_DEBUG
     widget::log_debug("multiline_edit", "in callback_handler");
-#endif
 
     switch(input) {
       case CMDK_ARROW_LEFT:

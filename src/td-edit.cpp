@@ -185,7 +185,7 @@ namespace todo {
   multiline_edit::multiline_edit():
     edit_base(),
     m_cursor_cord({0, 0}),
-    m_wrapped_text(),
+    m_ww(),
     m_update_wr(true),
     m_update_cp(true) {
   }
@@ -195,7 +195,6 @@ namespace todo {
     widget::log_debug("multiline_edit", "in callback_handler");
 #endif
 
-    auto const& itvs = m_wrapped_text.first;
     switch(input) {
       case CMDK_ARROW_LEFT:
         if (m_cursor_cord.scr_x >= 1) {
@@ -204,7 +203,7 @@ namespace todo {
         }
         break;
       case CMDK_ARROW_RIGHT:
-        if (m_cursor_cord.scr_x < itvs.at(m_cursor_cord.scr_y).second - 1) {
+        if (m_cursor_cord.scr_x < m_ww.at(m_cursor_cord.scr_y).second - 1) {
           m_cursor_cord.scr_x++;
           m_update_cp = true;
         }
@@ -212,15 +211,15 @@ namespace todo {
       case CMDK_ARROW_UP:
         if (m_cursor_cord.scr_y > 0) {
           m_cursor_cord.scr_y--;
-          size_t size_x = itvs.at(m_cursor_cord.scr_y).second;
+          int size_x = m_ww.at(m_cursor_cord.scr_y).second;
           m_cursor_cord.scr_x = MIN(m_cursor_cord.scr_x, size_x - 1);
           m_update_cp = true;
         }
         break;
       case CMDK_ARROW_DOWN:
-        if (m_cursor_cord.scr_y < m_wrapped_text.first.size() - 1) {
+        if (m_cursor_cord.scr_y < m_ww.lines() - 1) {
           m_cursor_cord.scr_y++;
-          size_t size_x = itvs.at(m_cursor_cord.scr_y).second;
+          int size_x = m_ww.at(m_cursor_cord.scr_y).second;
           m_cursor_cord.scr_x = MIN(m_cursor_cord.scr_x, size_x - 1);
           m_update_cp = true;
         }
@@ -257,23 +256,20 @@ namespace todo {
 
     if (m_update_wr) {
       size_t const size_x = m_end.scr_x - m_pos.scr_x - 1;
-      m_wrapped_text = word_wrap(m_text, size_x);
-      m_cursor_cord = wrapped_cords(m_wrapped_text.first, m_cursor_pos);
+      m_ww = utils::word_wrap(m_text, size_x);
+      m_cursor_cord = m_ww.cords(m_cursor_pos);
       m_update_wr = false;
     }
 
     if (m_update_cp) {
-      m_cursor_pos = wrapped_pos(m_wrapped_text.first, m_cursor_cord);
+      m_cursor_pos = m_ww.pos(m_cursor_cord);
       m_update_cp = false;
     }
 
-    auto const& cuts = m_wrapped_text.first;
-    auto const& disp_str = m_wrapped_text.second;
-
     int row_count = 0;
-    for (auto const& it : cuts) {
+    for (auto const& it : m_ww) {
       mvwaddnstr(win, m_pos.scr_y + row_count++,
-          m_pos.scr_x, disp_str.c_str()+it.first, it.second);
+          m_pos.scr_x, m_ww.c_str()+it.first, it.second);
     }
 
     if (has_focus()) {
@@ -282,79 +278,5 @@ namespace todo {
     }
     return row_count;
   }
-
-  size_t multiline_edit::wrapped_pos(intervals_t const& itvs,
-                                     td_screen_pos_t cords) {
-    auto const& p = itvs.at(cords.scr_y);
-    size_t pos = p.first;
-    pos += cords.scr_x < p.second ? cords.scr_x : p.second;
-    return pos;
-  }
-
-  td_screen_pos_t multiline_edit::wrapped_cords(intervals_t const& itvs,
-                                                size_t pos) {
-    td_screen_pos_t cords = {0, 0};
-    for (auto const& it : itvs) {
-      if (it.first <= pos && pos < it.first + it.second) {
-        cords.scr_x = pos - it.first;
-        break;
-      }
-      cords.scr_y++;
-    }
-    return cords;
-  }
-
-  multiline_edit::wrapped_t multiline_edit::word_wrap(std::string const& str,
-                                                      size_t const line_size) {
-    wrapped_t wr;
-    intervals_t& cuts = wr.first;
-    std::string& disp_str = wr.second;
-
-    // copy string
-    disp_str = str;
-
-    // reserve for least amount of lines
-    cuts.reserve(str.size() / line_size + 1);
-
-    size_t pos = 0, tmp = 0, size = 0, last = 0;
-    while (pos < str.size()) {
-      if (str[pos] != ' ' && str[pos] != '\n') {
-        // add non whitespace char to tmp
-        tmp++;
-      } else {
-        // current line size with tmp and
-        // whitespace greater than line size?
-        if (size + tmp + 1 > line_size) {
-          cuts.push_back( interval_t {last, size} );
-          last += size;
-          size = 0;
-        }
-
-        size += ++tmp;
-        tmp = 0;
-
-        if (str[pos] == '\n') {
-          // got new line -> forced cut
-          cuts.push_back( interval_t {last, size} );
-          disp_str[last + size - 1] = ' ';
-          last += size;
-          size = 0;
-        }
-      }
-      pos++;
-    }
-
-    if (size + tmp + 1 > line_size) {
-      cuts.push_back( interval_t {last, size} );
-      last += size;
-      size = 0;
-    }
-    size += tmp;
-    cuts.push_back(interval_t {last, size + 1} );
-    disp_str.push_back(' ');
-
-    return wr;
-  }
-
 
 }; // namespace todo

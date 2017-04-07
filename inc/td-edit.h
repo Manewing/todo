@@ -6,10 +6,11 @@
 #include <vector>
 #include <string>
 
+#include "td-defs.h"
 #include "td-widget.h"
 #include "td-except.h"
 #include "td-update.h"
-#include "td-defs.h"
+#include "td-utils.h"
 
 namespace todo {
 
@@ -147,10 +148,10 @@ namespace todo {
       static wrapped_t word_wrap(std::string const& str, size_t const line_size);
 
     protected:
-      td_screen_pos_t m_cursor_cord;
-      wrapped_t       m_wrapped_text;
-      bool            m_update_wr;
-      bool            m_update_cp;
+      td_screen_pos_t  m_cursor_cord;
+      utils::word_wrap m_ww;
+      bool             m_update_wr;
+      bool             m_update_cp;
   };
 
 }; // namespace todo

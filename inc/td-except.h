@@ -28,6 +28,8 @@ namespace todo {
       }
 
       virtual void handle(widget * handler) const {
+        (void)handler;
+        /* nothing todo */
       }
 
     protected:

@@ -18,7 +18,10 @@ namespace todo {
       widget();
       virtual ~widget();
 
-      virtual void callback_handler(int input) {};
+      virtual void callback_handler(int input) {
+        (void)input;
+        /* nothing todo */
+      }
 
       virtual int print(WINDOW * win) = 0;
 
@@ -28,8 +31,6 @@ namespace todo {
 
       virtual void return_focus();
       virtual void call_focus(int input);
-
-      //TODO private
       virtual void callback(int input);
 
       //TODO change logging system

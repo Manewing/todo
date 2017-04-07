@@ -39,8 +39,8 @@ namespace todo {
       // reserve least amount of lines needed
       m_itvs.reserve(str.size() / line_size + 1);
 
-      size_t pos = 0, tmp = 0, size = 0, last = 0;
-      while (pos < str.size()) {
+      int pos = 0, tmp = 0, size = 0, last = 0;
+      while (pos < static_cast<int>(str.size())) {
 
         // not a whitespace character?
         if (str[pos] != ' ' && str[pos] != '\n') {
@@ -106,11 +106,13 @@ namespace todo {
     word_wrap& word_wrap::operator = (word_wrap const& ww) {
       m_itvs = ww.m_itvs;
       m_str = ww.m_str;
+      return *this;
     }
 
     word_wrap& word_wrap::operator = (word_wrap && ww) {
       m_itvs = std::forward<intervals_t>(ww.m_itvs);
       m_str = std::forward<std::string>(ww.m_str);
+      return *this;
     }
 
     int word_wrap::pos(td_screen_pos_t cords) const {

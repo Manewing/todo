@@ -3,16 +3,128 @@
 #include <td-gui.h>
 #include <td-utils.h>
 
+#define CMD(name) \
+  { #name, \
+      { #name, \
+        cmdline_ ##name ##_arg, \
+        cmdline_ ##name ##_doc, \
+        false, \
+        &cmdline_ ##name \
+      } \
+  }
+
+#define CMDA(name, alias) \
+  { #name, \
+    { #alias ", " #name, \
+      cmdline_ ##name ##_arg, \
+      cmdline_ ##name ##_doc, \
+      false, \
+      &cmdline_ ##name} \
+  }, \
+  { #alias, \
+    { NULL, \
+      NULL, \
+      NULL, \
+      true, \
+      &cmdline_ ##name \
+    } \
+  }
+
+#define CMD_DESC(name, arg_str, doc_str) \
+  const char* cmdline_ ##name ##_arg = arg_str; \
+  const char* cmdline_ ##name ##_doc = doc_str;
+
 namespace {
 
-  const char* cmdline_help_doc =  "Displays this screen, help <cmd> for detailed information";
+  class help_screen : public ::todo::frame {
+    public:
+      help_screen():
+        ::todo::frame(),
+        m_scroll(0) {
+      }
+
+      void callback_handler(int input) {
+        switch (input) {
+          case CMDK_TRIGGERED:
+            break;
+          case CMDK_ARROW_UP:
+            m_scroll--;
+            break;
+          case CMDK_ARROW_DOWN:
+            m_scroll++;
+            break;
+          case CMDK_EXIT:
+          case CMDK_ESCAPE:
+            ::todo::gui::get().set_frame();
+            return_focus();
+            break;
+          default:
+            break;
+        }
+      }
+
+      int print(WINDOW* win) {
+        int mx, my;
+        getmaxyx(win, my, mx);
+
+        const int sx   = 5, sy = 5;
+        const int ex   = (mx - 5) < 0 ? 0 : (mx - 5);
+        const int ey   = (my - 5) < 0 ? 0 : (my - 5);
+        const int midx = (ex - sx) / 2;
+
+        // set position
+        set_pos(win, {sx, sy}, {ex, ey});
+
+        int scroll = 4 + m_scroll;
+
+        // print commands and documentation
+        for (auto const& it : ::todo::command_line::get()) {
+          if (it.second.is_alias)
+            continue;
+
+          wattron(m_win, A_BOLD);
+          mvwprintw(m_win, scroll++, 4, ":%s ", it.second.cmd_str);
+          wattroff(m_win, A_BOLD);
+
+          if (it.second.arg_str) {
+            wattron(m_win, A_UNDERLINE);
+            wprintw(m_win, "%s", it.second.arg_str);
+            wattroff(m_win, A_UNDERLINE);
+          }
+
+          ::todo::utils::word_wrap ww(it.second.doc_str, mx - 16);
+          for (auto const& it : ww) {
+            mvwaddnstr(m_win, scroll++, 8, ww.c_str()+it.first, it.second);
+          }
+          scroll += 1;
+
+        }
+
+        // print title
+        const char help_title[] = "TODO - HELP";
+        const int htsize        = sizeof(help_title);
+        wattron(m_win, A_BOLD | A_UNDERLINE);
+        mvwprintw(m_win, 2, midx - htsize/2, help_title);
+        wattroff(m_win, A_BOLD | A_UNDERLINE);
+
+        return ::todo::frame::print(win);
+      }
+
+      virtual ~help_screen() {
+      }
+
+    private:
+      int m_scroll;
+  };
+
+  CMD_DESC(help, NULL, "Displays this screen, help <cmd> for detailed information");
   int cmdline_help(::todo::command_line::args_t const& args) {
     (void)args;
-    ::todo::gui::get().print_msg_u("HERE SHOULD BE THE HELP SCREEN");
+    ::todo::gui::get().set_frame(new help_screen);
     return 0;
   }
 
-  const char* cmdline_save_doc = "Save todo list to file";
+  CMD_DESC(save, "filename", "Save todo list to file");
   int cmdline_save(::todo::command_line::args_t const& args) {
     auto& gui = ::todo::gui::get();
     auto& lst = gui.lst();
@@ -26,7 +138,7 @@ namespace {
     return 0;
   }
 
-  const char* cmdline_sortby_doc = "Select sort mode for todo list";
+  CMD_DESC(sortby, "mode", "Select sort mode for todo list");
   int cmdline_sortby(::todo::command_line::args_t const& args) {
     if (args.size() != 2)
       return 3;
@@ -46,7 +158,7 @@ namespace {
     return 0;
   }
 
-  const char* cmdline_add_doc = "Adds item to todo list";
+  CMD_DESC(add, "item name", "Adds item to todo list");
   int cmdline_add(::todo::command_line::args_t const& args) {
     if (args.size() != 2)
       return 3;
@@ -58,7 +170,7 @@ namespace {
     return 0;
   }
 
-  const char* cmdline_quit_doc = "Quit";
+  CMD_DESC(quit, NULL, "Quit");
   int cmdline_quit(::todo::command_line::args_t const& args) {
     (void)args;
     ::todo::gui::get().quit();
@@ -70,22 +182,13 @@ namespace {
 
 namespace todo {
 
-  #define CMD(name) { #name, {#name, cmdline_ ##name ##_doc, &cmdline_ ##name } }
-  #define ACMD(alias, name) { #alias, { #alias, cmdline_ ##name ##_doc, &cmdline_ ##name } }
   command_line command_line::m_instance = command_line::commands_t ({
-      CMD(help),
-      CMD(save),
-      ACMD(s, save),
-      ACMD(w, save),
-      ACMD(write, save),
-      CMD(sortby),
-      CMD(add),
-      ACMD(a, add),
-      CMD(quit),
-      ACMD(q, quit)
+      CMDA(help, h),
+      CMDA(save, w),
+      CMDA(sortby, s),
+      CMDA(add, a),
+      CMDA(quit, q)
   });
-  #undef ACMD
-  #undef CMD
 
   command_line::command_line(commands_t && cmds):
     m_commands(std::forward<commands_t>(cmds)) {

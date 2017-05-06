@@ -10,14 +10,18 @@ class gui_edit_submit_exception : public todo::exception {
       // get gui and edit
       ::todo::gui * gui = dynamic_cast<::todo::gui*>(handler);
       ::todo::edit * edit = dynamic_cast<::todo::edit*>(m_notifier);
+
+      // reset focus of gui
+      gui->set_focus();
+
+      // execute command
       ::todo::command_line::get().execute(edit->get_text());
 
       // edit has done its job hide it again
       edit->clear();
       edit->visible(false);
 
-      //update gui
-      gui->set_focus();
+      // update gui
       gui->update();
     }
 };
@@ -67,6 +71,8 @@ namespace todo {
     m_list(),
     m_quit(false),
     m_msg_u(),
+    m_header(),
+    m_frame(NULL),
     m_cmdline_edit(":") {
 
     // set input to raw
@@ -83,13 +89,6 @@ namespace todo {
     for(int i = 0; i < 8; i++)
       init_pair(i+1, i, -1);
 
-    int max_row, max_col;
-    getmaxyx(stdscr, max_row, max_col);
-
-    td_screen_pos_t pos = { 0, max_row-1 };
-    td_screen_pos_t end = { max_col, max_row-1 };
-    m_cmdline_edit.set_pos(pos);
-    m_cmdline_edit.set_end(end);
     m_cmdline_edit.set_callback(new gui_edit_submit_exception, CMDK_ENTER);
     m_cmdline_edit.visible(false);
 
@@ -171,7 +170,13 @@ namespace todo {
     }
 
     // print command line
+    m_cmdline_edit.set_pos({0, max_row - 1});
+    m_cmdline_edit.set_end({max_col, max_row - 1});
     m_cmdline_edit.print(win);
+
+    // print floating frame
+    if (m_frame)
+      m_frame->print(win);
 
     curs_set(1);
     move(gui::cursor_pos.scr_y, gui::cursor_pos.scr_x);
@@ -179,6 +184,11 @@ namespace todo {
     gui::cursor_pos.scr_y = max_row - 1;
 
     return 0;
+  }
+
+  void gui::set_frame(frame* fr) {
+    m_frame = fr;
+    set_focus(m_frame);
   }
 
 }; // namespace todo

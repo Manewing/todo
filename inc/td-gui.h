@@ -21,7 +21,6 @@ namespace todo {
 
   class gui : public widget, public update_if {
     public:
-      enum { NO_FOCUS, ITEM_FOCUS, CMD_LINE_FOCUS };
       static td_screen_pos_t cursor_pos;
 
       static gui& get();
@@ -50,6 +49,8 @@ namespace todo {
       inline bool is_running() const { return !m_quit; }
       inline list& lst() { return m_list; }
 
+      void set_frame(frame* fr = NULL);
+
     private:
       /* disabled */
       gui(const gui&);
@@ -60,9 +61,8 @@ namespace todo {
       bool         m_quit;        //< true if to quit
       std::string  m_msg_u;
       gui_header   m_header;
-
-    public:
-      edit    m_cmdline_edit;
+      frame*       m_frame;
+      edit         m_cmdline_edit;
   };
 
 }; // namespace todo

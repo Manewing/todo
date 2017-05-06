@@ -12,8 +12,10 @@ namespace todo {
       typedef std::vector<std::string>            args_t;
 
       typedef struct {
-        const char * cmd_str;            //< the actual command
+        const char * cmd_str;            //< description of command
+        const char * arg_str;            //< description of arguments
         const char * doc_str;            //< documentation of command
+        bool         is_alias;
         int (*execute)(args_t const& a); //< function to execute
       } command;
 
